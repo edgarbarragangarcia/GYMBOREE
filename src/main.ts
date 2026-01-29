@@ -159,3 +159,19 @@ function updateWhatsAppButton(sede: Sede) {
 
 // Ejecución inicial
 detectLocation();
+
+// EFECTO SCROLL PARALLAX: Separación de la foto
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY;
+  const heroImg = document.querySelector('.hero-bg-image img') as HTMLElement;
+
+  if (heroImg) {
+    // Calculamos el desplazamiento. 
+    // scrollY * 0.15 significa que por cada 100px de scroll, la imagen se mueve 15px.
+    const moveX = scrollY * 0.25;
+
+    // Aplicamos la transformación: mover a la derecha y un sutil "alejamiento" (scale)
+    // Esto crea la sensación de que se "separa" del contenido.
+    heroImg.style.transform = `translateX(${moveX}px) scale(${1 + scrollY * 0.0005})`;
+  }
+});
