@@ -1,4 +1,4 @@
-import { Settings, Shield, Bell, Layout, Users } from 'lucide-react';
+import { Shield, Bell, Layout, Users } from 'lucide-react';
 
 export default function Configuracion() {
     return (

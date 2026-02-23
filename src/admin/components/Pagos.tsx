@@ -1,4 +1,4 @@
-import { DollarSign, FileText, Plus, Search, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { FileText, Plus, Search, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 export default function Pagos() {
     return (

@@ -1,4 +1,4 @@
-import { Target, Search, Plus, Filter, MessageSquare, PhoneCall } from 'lucide-react';
+import { Search, Plus, Filter, MessageSquare, PhoneCall } from 'lucide-react';
 
 export default function WalkinsCRM() {
     return (

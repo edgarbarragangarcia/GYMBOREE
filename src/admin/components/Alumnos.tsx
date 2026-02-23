@@ -1,4 +1,4 @@
-import { Users, Search, Plus, ExternalLink } from 'lucide-react';
+import { Search, Plus, ExternalLink } from 'lucide-react';
 
 export default function Alumnos() {
     return (
