@@ -31,11 +31,17 @@ export default function App() {
     };
 
     return (
-        <div className="app-container glass-panel" style={{ borderRadius: 0, border: 'none' }}>
-            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-            <main className="main-content">
-                {renderContent()}
-            </main>
+        <div className="login-wrapper" style={{ minHeight: '100vh', width: '100vw', background: 'var(--bg-gradient)' }}>
+            {/* Global Animated Background Shapes */}
+            <div className="login-bg-shape bg-shape-1"></div>
+            <div className="login-bg-shape bg-shape-2"></div>
+
+            <div className="app-container glass-panel" style={{ borderRadius: 0, border: 'none', position: 'relative', zIndex: 10, width: '100%', height: '100vh', display: 'flex' }}>
+                <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+                <main className="main-content">
+                    {renderContent()}
+                </main>
+            </div>
         </div>
     );
 }
