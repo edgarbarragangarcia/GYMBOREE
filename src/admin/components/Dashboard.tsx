@@ -1,4 +1,3 @@
-import React from 'react';
 import { Users, UserPlus, CreditCard, Activity, Plus } from 'lucide-react';
 
 export default function Dashboard() {
