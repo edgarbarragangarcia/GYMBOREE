@@ -1,49 +1,66 @@
 import { store } from './store';
 
 export function initAdminUI() {
-  const adminBtn = document.createElement('button');
-  adminBtn.innerText = '⚙️ Editar Sitio';
-  adminBtn.style.cssText = `
+  const container = document.createElement('div');
+  container.style.cssText = `
     position: fixed;
-    bottom: 20px;
-    left: 20px;
-    z-index: 9999;
-    padding: 10px 15px;
-    background: #333;
+    bottom: 24px;
+    left: 24px;
+    z-index: 10000;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  `;
+
+  const editBtn = document.createElement('button');
+  editBtn.innerText = '⚙️ Editar Sitio';
+  editBtn.style.cssText = `
+    padding: 12px 20px;
+    background: #1d1d1f;
     color: white;
     border: none;
     border-radius: 50px;
     cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    font-family: sans-serif;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    font-family: inherit;
     font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   `;
+
+  editBtn.onmouseenter = () => editBtn.style.transform = 'translateY(-2px) scale(1.05)';
+  editBtn.onmouseleave = () => editBtn.style.transform = 'translateY(0) scale(1)';
+
+  container.appendChild(editBtn);
 
   const panel = document.createElement('div');
   panel.style.cssText = `
     position: fixed;
-    bottom: 70px;
-    left: 20px;
+    bottom: 84px;
+    left: 24px;
     width: 320px;
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    z-index: 9999;
-    font-family: sans-serif;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 24px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    font-family: inherit;
     display: none;
     max-height: 80vh;
     overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.5);
   `;
 
-  document.body.appendChild(adminBtn);
+  document.body.appendChild(container);
   document.body.appendChild(panel);
 
   let isOpen = false;
-  adminBtn.onclick = () => {
+  editBtn.onclick = () => {
     isOpen = !isOpen;
     panel.style.display = isOpen ? 'block' : 'none';
-    adminBtn.innerText = isOpen ? '❌ Cerrar Editor' : '⚙️ Editar Sitio';
+    editBtn.innerText = isOpen ? '❌ Cerrar Editor' : '⚙️ Editar Sitio';
     if (isOpen) renderForm();
   };
 
