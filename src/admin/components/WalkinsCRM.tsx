@@ -1,6 +1,10 @@
-import { Search, Plus, Filter, MessageSquare, PhoneCall } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Plus, Filter, MessageSquare, PhoneCall, FileText, X, Save } from 'lucide-react';
 
 export default function WalkinsCRM() {
+    const [selectedLead, setSelectedLead] = useState<any>(null);
+    const [notes, setNotes] = useState('');
+
     return (
         <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
@@ -80,6 +84,7 @@ export default function WalkinsCRM() {
                                         </td>
                                         <td style={{ padding: '16px 8px' }}>
                                             <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button onClick={() => setSelectedLead(lead)} style={{ background: 'rgba(255, 149, 0, 0.1)', color: 'var(--brand-orange)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Registrar Actividad"><FileText size={16} /></button>
                                                 <button style={{ background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="WhatsApp"><MessageSquare size={16} /></button>
                                                 <button style={{ background: 'rgba(0, 113, 227, 0.1)', color: 'var(--accent-color)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Llamar"><PhoneCall size={16} /></button>
                                             </div>
@@ -91,6 +96,52 @@ export default function WalkinsCRM() {
                     </div>
                 </div>
             </div>
+            {/* Modal de Registro de Actividad */}
+            {selectedLead && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '24px', background: 'var(--surface-color)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h2 style={{ margin: 0, fontSize: '20px' }}>Registrar Actividad</h2>
+                            <button onClick={() => setSelectedLead(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
+                        </div>
+
+                        <div style={{ marginBottom: '20px', padding: '16px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>
+                            <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '4px' }}>{selectedLead.nombre}</div>
+                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Programa de interés: {selectedLead.programa}</div>
+                        </div>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, fontSize: '14px' }}>¿Qué actividad se realizó?</label>
+                            <textarea
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                className="premium-input"
+                                rows={4}
+                                style={{ width: '100%', resize: 'vertical', borderRadius: '8px', padding: '12px' }}
+                                placeholder="Ej. Se llamó a la mamá y quedó en confirmar asistencia mañana..."
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <button onClick={() => setSelectedLead(null)} style={{ padding: '10px 16px', background: 'transparent', border: '1px solid var(--surface-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}>
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    // Simulated save action
+                                    setSelectedLead(null);
+                                    setNotes('');
+                                }}
+                                className="btn-primary"
+                                style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '8px' }}
+                            >
+                                <Save size={16} />
+                                Guardar Registro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
