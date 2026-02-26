@@ -27,7 +27,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             <div className="login-bg-shape bg-shape-2"></div>
 
             <div className="login-container">
-                <a href="http://localhost:5173/#" className="back-link">
+                <a href="/" className="back-link">
                     <ArrowLeft size={16} />
                     Volver al sitio principal
                 </a>
