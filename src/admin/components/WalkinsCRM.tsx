@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, MessageSquare, PhoneCall, FileText, X, Save } from 'lucide-react';
+import { Search, Plus, Filter, MessageSquare, PhoneCall, FileText, X, Save, Calendar } from 'lucide-react';
 
 export default function WalkinsCRM() {
     const [selectedLead, setSelectedLead] = useState<any>(null);
     const [notes, setNotes] = useState('');
+    const [nextTaskDate, setNextTaskDate] = useState('');
+    const [nextTaskDesc, setNextTaskDesc] = useState('');
 
     return (
         <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -122,6 +124,37 @@ export default function WalkinsCRM() {
                             />
                         </div>
 
+                        <div style={{ marginBottom: '24px', borderTop: '1px solid var(--surface-border)', paddingTop: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '12px', fontWeight: 600, fontSize: '15px' }}>Programar Siguiente Tarea</label>
+
+                            <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+                                <div style={{ width: '150px' }}>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>Fecha</label>
+                                    <div className="input-wrapper" style={{ position: 'relative' }}>
+                                        <Calendar size={16} className="input-icon" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                        <input
+                                            type="date"
+                                            value={nextTaskDate}
+                                            onChange={(e) => setNextTaskDate(e.target.value)}
+                                            className="premium-input"
+                                            style={{ paddingLeft: '36px', height: '40px', borderRadius: '8px', fontSize: '14px', width: '100%' }}
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>Descripción de la Tarea</label>
+                                    <input
+                                        type="text"
+                                        value={nextTaskDesc}
+                                        onChange={(e) => setNextTaskDesc(e.target.value)}
+                                        className="premium-input"
+                                        style={{ height: '40px', borderRadius: '8px', fontSize: '14px', width: '100%' }}
+                                        placeholder="Ej. Llamar para confirmar demo..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                             <button onClick={() => setSelectedLead(null)} style={{ padding: '10px 16px', background: 'transparent', border: '1px solid var(--surface-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}>
                                 Cancelar
@@ -131,6 +164,8 @@ export default function WalkinsCRM() {
                                     // Simulated save action
                                     setSelectedLead(null);
                                     setNotes('');
+                                    setNextTaskDate('');
+                                    setNextTaskDesc('');
                                 }}
                                 className="btn-primary"
                                 style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '8px' }}
