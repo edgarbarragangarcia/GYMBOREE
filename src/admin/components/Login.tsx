@@ -12,7 +12,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === 'cataa' && password === '1234') {
+        if (username.trim().toLowerCase() === 'cataa' && password.trim() === '1234') {
             setError('');
             onLoginSuccess();
         } else {
