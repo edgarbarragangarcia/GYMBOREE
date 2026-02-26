@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Search, Plus, Filter, MessageSquare, PhoneCall, FileText, X, Save, Calendar } from 'lucide-react';
+import { Search, Plus, Filter, MessageSquare, PhoneCall, FileText, X, Save, Calendar, User } from 'lucide-react';
 
 export default function WalkinsCRM() {
     const [selectedLead, setSelectedLead] = useState<any>(null);
+    const [viewProfileLead, setViewProfileLead] = useState<any>(null);
     const [notes, setNotes] = useState('');
     const [nextTaskDate, setNextTaskDate] = useState('');
     const [nextTaskDesc, setNextTaskDesc] = useState('');
@@ -86,6 +87,7 @@ export default function WalkinsCRM() {
                                         </td>
                                         <td style={{ padding: '16px 8px' }}>
                                             <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button onClick={() => setViewProfileLead(lead)} style={{ background: 'rgba(142, 142, 147, 0.1)', color: 'var(--text-secondary)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Ver Hoja de Vida"><User size={16} /></button>
                                                 <button onClick={() => setSelectedLead(lead)} style={{ background: 'rgba(255, 149, 0, 0.1)', color: 'var(--brand-orange)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Registrar Actividad"><FileText size={16} /></button>
                                                 <button style={{ background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="WhatsApp"><MessageSquare size={16} /></button>
                                                 <button style={{ background: 'rgba(0, 113, 227, 0.1)', color: 'var(--accent-color)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Llamar"><PhoneCall size={16} /></button>
@@ -172,6 +174,64 @@ export default function WalkinsCRM() {
                             >
                                 <Save size={16} />
                                 Guardar Registro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Hoja de Vida */}
+            {viewProfileLead && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', padding: '24px', background: 'var(--surface-color)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h2 style={{ margin: 0, fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}><User size={24} /> Hoja de Vida del Lead</h2>
+                            <button onClick={() => setViewProfileLead(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                            <div style={{ background: 'rgba(0,0,0,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--surface-border)' }}>
+                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Nombre del Padre/Madre</div>
+                                <div style={{ fontWeight: 600, fontSize: '16px' }}>{viewProfileLead.nombre}</div>
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--surface-border)' }}>
+                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Nombre del Niño(a)</div>
+                                <div style={{ fontWeight: 600, fontSize: '16px' }}>{viewProfileLead.nino}</div>
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--surface-border)' }}>
+                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Teléfono</div>
+                                <div style={{ fontWeight: 600, fontSize: '15px' }}>{viewProfileLead.tel}</div>
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid var(--surface-border)' }}>
+                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Programa de Interés</div>
+                                <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--brand-orange)' }}>{viewProfileLead.programa}</div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '16px', marginBottom: '12px', borderBottom: '1px solid var(--surface-border)', paddingBottom: '8px' }}>Historial de Actividades (Timeline)</h3>
+
+                            <div style={{ display: 'flex', gap: '12px', position: 'relative', paddingLeft: '8px', marginBottom: '16px' }}>
+                                <div style={{ left: '13px', width: '2px', background: 'var(--surface-border)', position: 'absolute', top: '24px', bottom: '-20px' }}></div>
+                                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--success)', marginTop: '4px', zIndex: 1, flexShrink: 0 }}></div>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '14px' }}>Llamada de confirmación</div>
+                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>{viewProfileLead.fecha} - Se confirmó asistencia a clase demo.</div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px', position: 'relative', paddingLeft: '8px' }}>
+                                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--brand-orange)', marginTop: '4px', zIndex: 1, flexShrink: 0 }}></div>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '14px' }}>Registro Inicial</div>
+                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>{viewProfileLead.diaRegistro} - Lead capturado vía {viewProfileLead.origen}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid var(--surface-border)' }}>
+                            <button onClick={() => setViewProfileLead(null)} className="btn-primary" style={{ padding: '10px 24px', borderRadius: '8px' }}>
+                                Cerrar Perfil
                             </button>
                         </div>
                     </div>
