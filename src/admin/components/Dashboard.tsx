@@ -45,7 +45,7 @@ export default function Dashboard() {
                         <Activity size={20} />
                     </div>
                     <div className="stat-value">8</div>
-                    <div className="stat-label">Cortesías Agendadas</div>
+                    <div className="stat-label">Leads en proceso</div>
                 </div>
 
                 {/* Main Chart Area */}
