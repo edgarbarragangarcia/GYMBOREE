@@ -38,7 +38,9 @@ export default function WalkinsCRM() {
                                 <tr style={{ borderBottom: '2px solid var(--surface-border)', color: 'var(--text-secondary)', fontSize: '13px' }}>
                                     <th style={{ padding: '16px 8px' }}>Prospecto</th>
                                     <th style={{ padding: '16px 8px' }}>Contacto</th>
+                                    <th style={{ padding: '16px 8px' }}>Día de Registro</th>
                                     <th style={{ padding: '16px 8px' }}>Día de Contacto</th>
+                                    <th style={{ padding: '16px 8px', textAlign: 'center' }}>Días sin Actividad</th>
                                     <th style={{ padding: '16px 8px' }}>Canal / Origen</th>
                                     <th style={{ padding: '16px 8px' }}>Programa Interés</th>
                                     <th style={{ padding: '16px 8px' }}>Estado</th>
@@ -47,9 +49,9 @@ export default function WalkinsCRM() {
                             </thead>
                             <tbody>
                                 {[
-                                    { nombre: 'Familia Gómez', tel: '311 555 1234', nino: 'Santiago (2 años)', fecha: 'Hoy, 10:30 AM', origen: 'WhatsApp / Pauta IG', programa: 'Play & Learn', estado: 'Nuevo' },
-                                    { nombre: 'Carolina Ruiz', tel: '320 888 9999', nino: 'Mía (4 años)', fecha: 'Ayer, 4:15 PM', origen: 'Presencial / Referido', programa: 'School Skills', estado: 'Clase Demo Programada' },
-                                    { nombre: 'Jorge Silva', tel: '300 111 2222', nino: 'Tomás (1 año)', fecha: '20 Feb', origen: 'Llamada / Web', programa: 'Play & Learn', estado: 'En Seguimiento' },
+                                    { nombre: 'Familia Gómez', tel: '311 555 1234', nino: 'Santiago (2 años)', diaRegistro: 'Hoy', fecha: 'Hoy, 10:30 AM', diasInactivo: 0, origen: 'WhatsApp / Pauta IG', programa: 'Play & Learn', estado: 'Nuevo' },
+                                    { nombre: 'Carolina Ruiz', tel: '320 888 9999', nino: 'Mía (4 años)', diaRegistro: 'Ayer', fecha: 'Ayer, 4:15 PM', diasInactivo: 1, origen: 'Presencial / Referido', programa: 'School Skills', estado: 'Clase Demo Programada' },
+                                    { nombre: 'Jorge Silva', tel: '300 111 2222', nino: 'Tomás (1 año)', diaRegistro: '18 Feb', fecha: '20 Feb', diasInactivo: 6, origen: 'Llamada / Web', programa: 'Play & Learn', estado: 'En Seguimiento' },
                                 ].map((lead, i) => (
                                     <tr key={i} style={{ borderBottom: '1px solid var(--surface-border)', transition: 'background 0.2s' }}>
                                         <td style={{ padding: '16px 8px' }}>
@@ -57,7 +59,11 @@ export default function WalkinsCRM() {
                                             <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Niño: {lead.nino}</div>
                                         </td>
                                         <td style={{ padding: '16px 8px', fontSize: '14px' }}>{lead.tel}</td>
+                                        <td style={{ padding: '16px 8px', fontSize: '14px', color: 'var(--text-secondary)' }}>{lead.diaRegistro}</td>
                                         <td style={{ padding: '16px 8px', fontSize: '14px', color: 'var(--text-secondary)' }}>{lead.fecha}</td>
+                                        <td style={{ padding: '16px 8px', fontSize: '14px', color: lead.diasInactivo > 3 ? 'var(--danger)' : lead.diasInactivo > 0 ? 'var(--warning)' : 'var(--success)', fontWeight: 600, textAlign: 'center' }}>
+                                            {lead.diasInactivo} {lead.diasInactivo === 1 ? 'día' : 'días'}
+                                        </td>
                                         <td style={{ padding: '16px 8px', fontSize: '13px' }}>{lead.origen}</td>
                                         <td style={{ padding: '16px 8px', fontSize: '14px', fontWeight: 500 }}>{lead.programa}</td>
                                         <td style={{ padding: '16px 8px' }}>
