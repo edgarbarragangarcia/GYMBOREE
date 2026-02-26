@@ -29,7 +29,7 @@ export default function Dashboard() {
                         <UserPlus size={20} />
                     </div>
                     <div className="stat-value">14</div>
-                    <div className="stat-label">Walkins por gestionar</div>
+                    <div className="stat-label">Walkings por gestionar</div>
                 </div>
 
                 <div className="stat-card glass-panel">
