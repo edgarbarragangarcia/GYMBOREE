@@ -25,29 +25,7 @@ interface Message {
     created_at: string;
 }
 
-const GEMINI_API_KEY = "AIzaSyAIALRCFQMFmOi-r9SmDRu7EXYXP8H6wuE";
 const BOT_TOKEN = "8646314018:AAGO8K68wwC77YES_AAFy9Id0oNG4mJdImg";
-
-const GYMBOREE_SYSTEM_PROMPT = `Eres el asistente administrador de GYMBOREE respondiendo a clientes en Telegram. 
-Sé amable, conciso y profesional. Responde en español.`;
-
-async function askGemini(userMessage: string, history: Message[]): Promise<string> {
-    const contents = [
-        { role: 'user', parts: [{ text: GYMBOREE_SYSTEM_PROMPT }] },
-        { role: 'model', parts: [{ text: 'Entendido.' }] },
-        ...history.slice(-6).map(m => ({
-            role: m.from_bot ? 'model' : 'user',
-            parts: [{ text: m.text }]
-        })),
-        { role: 'user', parts: [{ text: userMessage }] }
-    ];
-    const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents }) }
-    );
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No pude generar respuesta.';
-}
 
 export default function TelegramBot() {
     const [chats, setChats] = useState<Chat[]>([]);
