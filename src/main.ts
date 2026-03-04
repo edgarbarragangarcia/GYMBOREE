@@ -3,8 +3,8 @@ import { store } from './cms/store';
 import type { SiteContent } from './cms/store';
 import { initAdminUI } from './cms/admin-ui';
 
-// Inicializar el Panel de Administración (CMS Local)
-initAdminUI();
+// // Inicializar el Panel de Administración (CMS Local)
+// initAdminUI();
 
 interface Sede {
   nombre: string;

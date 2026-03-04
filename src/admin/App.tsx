@@ -7,7 +7,9 @@ import Reservas from './components/Reservas';
 import Pagos from './components/Pagos';
 import Almacen from './components/Almacen';
 import Configuracion from './components/Configuracion';
-import { Home, Users, Calendar, CreditCard, Box, Settings, Target } from 'lucide-react';
+import EditarSitio from './components/EditarSitio';
+import TelegramBot from './components/TelegramBot';
+import { Home, Users, Calendar, CreditCard, Box, Settings, Target, Layout, MessageSquare } from 'lucide-react';
 
 export default function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -26,6 +28,8 @@ export default function App() {
             case 'pagos': return <Pagos />;
             case 'almacen': return <Almacen />;
             case 'configuracion': return <Configuracion />;
+            case 'editar-sitio': return <EditarSitio />;
+            case 'telegram-bot': return <TelegramBot />;
             default: return <Dashboard />;
         }
     };
@@ -78,6 +82,14 @@ function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab:
                 <div className={`nav-item ${activeTab === 'almacen' ? 'active' : ''}`} onClick={() => setActiveTab('almacen')}>
                     <Box size={20} />
                     <span>Almacén</span>
+                </div>
+                <div className={`nav-item ${activeTab === 'editar-sitio' ? 'active' : ''}`} onClick={() => setActiveTab('editar-sitio')}>
+                    <Layout size={20} />
+                    <span>Editar Sitio</span>
+                </div>
+                <div className={`nav-item ${activeTab === 'telegram-bot' ? 'active' : ''}`} onClick={() => setActiveTab('telegram-bot')}>
+                    <MessageSquare size={20} />
+                    <span>Telegram Bot</span>
                 </div>
             </div>
 

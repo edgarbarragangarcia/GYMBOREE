@@ -296,6 +296,41 @@ header {
   justify-content: center;
 }
 
+/* Telegram Bot Widget */
+.tg-widget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #0088cc;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-decoration: none;
+  z-index: 10000;
+  box-shadow: 0 10px 40px rgba(0, 136, 204, 0.4);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tg-widget:hover {
+  transform: scale(1.1) rotate(5deg);
+  background: #0099e6;
+  box-shadow: 0 15px 50px rgba(0, 136, 204, 0.6);
+}
+
+.tg-circle {
+  width: 28px;
+  height: 28px;
+  background: #0088cc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 1024px) {
   .hero-text-box h1 {
     font-size: 4rem;
@@ -333,6 +368,16 @@ header {
   }
 
   .wa-widget span {
+    display: none;
+  }
+
+  .tg-widget {
+    bottom: 84px;
+    right: 24px;
+    padding: 12px;
+  }
+
+  .tg-widget span {
     display: none;
   }
 }

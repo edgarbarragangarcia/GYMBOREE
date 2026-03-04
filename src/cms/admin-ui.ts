@@ -1,18 +1,23 @@
 import { store } from './store';
 
-export function initAdminUI() {
+export function initAdminUI(options = { showFloatingButton: true }) {
+  // Evitar doble inicialización
+  if (document.querySelector('.cms-panel')) return;
+
   const container = document.createElement('div');
+  container.className = 'cms-container';
   container.style.cssText = `
     position: fixed;
     bottom: 24px;
     left: 24px;
     z-index: 10000;
-    display: flex;
+    display: ${options.showFloatingButton ? 'flex' : 'none'};
     gap: 12px;
     align-items: center;
   `;
 
   const editBtn = document.createElement('button');
+  editBtn.className = 'cms-floating-btn';
   editBtn.innerText = '⚙️ Editar Sitio';
   editBtn.style.cssText = `
     padding: 12px 20px;
@@ -34,6 +39,7 @@ export function initAdminUI() {
   container.appendChild(editBtn);
 
   const panel = document.createElement('div');
+  panel.className = 'cms-panel';
   panel.style.cssText = `
     position: fixed;
     bottom: 84px;
@@ -57,12 +63,18 @@ export function initAdminUI() {
   document.body.appendChild(panel);
 
   let isOpen = false;
-  editBtn.onclick = () => {
-    isOpen = !isOpen;
+
+  const togglePanel = (forceOpen?: boolean) => {
+    isOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
     panel.style.display = isOpen ? 'block' : 'none';
     editBtn.innerText = isOpen ? '❌ Cerrar Editor' : '⚙️ Editar Sitio';
     if (isOpen) renderForm();
   };
+
+  editBtn.onclick = () => togglePanel();
+
+  // Exponer globalmente para poder abrir desde el admin reactivo
+  (window as any).toggleCMSPanel = togglePanel;
 
   function renderForm() {
     const data = store.get();
