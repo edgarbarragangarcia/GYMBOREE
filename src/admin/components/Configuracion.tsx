@@ -1,15 +1,52 @@
-import { Shield, Bell, Layout, Users } from 'lucide-react';
+import { Shield, Bell, Layout, Users, LogOut } from 'lucide-react';
 
-export default function Configuracion() {
+interface ConfiguracionProps {
+    onLogout: () => void;
+}
+
+export default function Configuracion({ onLogout }: ConfiguracionProps) {
     return (
-        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '32px' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Configuración del Sistema</h1>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Ajustes globales, personalización y control de accesos.</p>
+        <div style={{ padding: '0 8px' }}>
+            <div style={{
+                marginBottom: '32px',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                background: 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(20px)',
+                padding: '24px 8px',
+                margin: '0 -8px 32px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            }}>
+                <div>
+                    <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Configuración del Sistema</h1>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Ajustes globales, personalización y control de accesos.</p>
+                </div>
+                <button
+                    onClick={onLogout}
+                    className="glass-panel"
+                    style={{
+                        padding: '10px 20px',
+                        border: '1px solid rgba(255, 59, 48, 0.2)',
+                        borderRadius: '16px',
+                        background: 'rgba(255, 59, 48, 0.05)',
+                        color: 'var(--danger)',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}
+                >
+                    <LogOut size={18} />
+                    Cerrar Sesión
+                </button>
             </div>
 
-            <div className="grid">
-                <div className="chart-card glass-panel" style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '32px' }}>
+                <div className="chart-card glass-panel" style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '8px', height: 'fit-content' }}>
                     <h3 className="card-title" style={{ marginBottom: '16px' }}>Menú de Ajustes</h3>
 
                     {[

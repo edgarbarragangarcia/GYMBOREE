@@ -165,7 +165,7 @@ export default function TelegramBot() {
     };
 
     return (
-        <div style={{ height: 'calc(100vh - 48px)', display: 'flex', overflow: 'hidden', padding: '24px 8px', gap: '24px' }}>
+        <div style={{ height: 'calc(100vh - 64px)', display: 'flex', overflow: 'hidden', padding: '0 8px 24px', gap: '24px' }}>
             {/* Sidebar de Chats */}
             <div className="glass-panel" style={{ width: '280px', display: 'flex', flexDirection: 'column', borderRadius: '20px', overflow: 'hidden', flexShrink: 0 }}>
                 <div style={{ padding: '20px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
