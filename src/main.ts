@@ -174,8 +174,6 @@ interface PuzzlePiece {
 
 let puzzlePieces: PuzzlePiece[] = [];
 let puzzleReady = false;
-let horizontalConns: number[][] = [];
-let verticalConns: number[][] = [];
 let ticking = false;
 
 function buildPuzzle() {
@@ -192,52 +190,29 @@ function buildPuzzle() {
   const pieceH = H / ROWS;
   const imgSrc = img.src;
 
-  // Generar conexiones aleatorias que encajen
-  horizontalConns = Array(ROWS).fill(0).map(() => Array(COLS + 1).fill(0));
-  verticalConns = Array(ROWS + 1).fill(0).map(() => Array(COLS).fill(0));
-
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 1; c < COLS; c++) {
-      horizontalConns[r][c] = Math.random() > 0.5 ? 1 : -1;
-    }
-  }
-  for (let r = 1; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      verticalConns[r][c] = Math.random() > 0.5 ? 1 : -1;
-    }
-  }
-
   container.querySelectorAll('.puzzle-piece').forEach(el => el.remove());
   puzzlePieces = [];
-
-  const tabSize = Math.min(pieceW, pieceH) * 0.25;
 
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       const piece = document.createElement('div');
       piece.className = 'puzzle-piece';
 
-      const extra = tabSize * 1.5;
       Object.assign(piece.style, {
         position: 'absolute',
-        left: `${col * pieceW - extra}px`,
-        top: `${row * pieceH - extra}px`,
-        width: `${pieceW + extra * 2}px`,
-        height: `${pieceH + extra * 2}px`,
+        left: `${col * pieceW}px`,
+        top: `${row * pieceH}px`,
+        width: `${pieceW}px`,
+        height: `${pieceH}px`,
         backgroundImage: `url("${imgSrc}")`,
         backgroundSize: `${W}px ${H}px`,
-        backgroundPosition: `-${col * pieceW - extra}px -${row * pieceH - extra}px`,
+        backgroundPosition: `-${col * pieceW}px -${row * pieceH}px`,
         backgroundRepeat: 'no-repeat',
         willChange: 'transform, opacity',
         zIndex: '1',
+        border: '0.5px solid rgba(255,255,255,0.05)', // Borde casi invisible para separar cuadros
       });
 
-      const top = verticalConns[row][col];
-      const right = horizontalConns[row][col + 1];
-      const bottom = verticalConns[row + 1][col] * -1;
-      const left = horizontalConns[row][col] * -1;
-
-      piece.style.clipPath = createPuzzlePolygon(extra, extra, pieceW, pieceH, tabSize, top, right, bottom, left);
       container.appendChild(piece);
 
       const angle = Math.random() * Math.PI * 2;
@@ -252,42 +227,6 @@ function buildPuzzle() {
   }
 
   puzzleReady = true;
-}
-
-// Usamos POLYGON en lugar de PATH para máxima compatibilidad y evitar los puntos blancos
-function createPuzzlePolygon(x: number, y: number, w: number, h: number, s: number, top: number, right: number, bottom: number, left: number) {
-  const p = {
-    x1: x, x2: x + w * 0.35, x3: x + w * 0.4, x4: x + w * 0.6, x5: x + w * 0.65, x6: x + w,
-    y1: y, y2: y + h * 0.35, y3: y + h * 0.4, y4: y + h * 0.6, y5: y + h * 0.65, y6: y + h
-  };
-
-  let points = [];
-
-  // Top
-  points.push(`${p.x1}px ${p.y1}px`);
-  if (top !== 0) {
-    points.push(`${p.x2}px ${p.y1}px`, `${p.x2}px ${p.y1 - top * s}px`, `${p.x5}px ${p.y1 - top * s}px`, `${p.x5}px ${p.y1}px`);
-  }
-  points.push(`${p.x6}px ${p.y1}px`);
-
-  // Right
-  if (right !== 0) {
-    points.push(`${p.x6}px ${p.y2}px`, `${p.x6 + right * s}px ${p.y2}px`, `${p.x6 + right * s}px ${p.y5}px`, `${p.x6}px ${p.y5}px`);
-  }
-  points.push(`${p.x6}px ${p.y6}px`);
-
-  // Bottom
-  if (bottom !== 0) {
-    points.push(`${p.x5}px ${p.y6}px`, `${p.x5}px ${p.y6 + bottom * s}px`, `${p.x2}px ${p.y6 + bottom * s}px`, `${p.x2}px ${p.y6}px`);
-  }
-  points.push(`${p.x1}px ${p.y6}px`);
-
-  // Left
-  if (left !== 0) {
-    points.push(`${p.x1}px ${p.y5}px`, `${p.x1 + left * s}px ${p.y5}px`, `${p.x1 + left * s}px ${p.y2}px`, `${p.x1}px ${p.y2}px`);
-  }
-
-  return `polygon(${points.join(', ')})`;
 }
 
 function onScroll() {
