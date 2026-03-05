@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, CheckCircle2, X } from 'lucide-react';
+import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, CheckCircle2, X, FileText } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // Cliente apuntando al proyecto HUNTER (no toca la DB de APEG/Gymboree)
@@ -378,71 +378,135 @@ export default function TelegramBot() {
 
                     <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
                         {foundChild ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                {/* Profile Header */}
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 12px', borderRadius: '40px', overflow: 'hidden', border: '3px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                                        <img src={foundChild.photo} alt={foundChild.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            isScheduling ? (
+                                <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                                        <button onClick={() => setIsScheduling(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+                                        <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Programar Cita</h3>
                                     </div>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>{foundChild.name}</h3>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>{foundChild.age}</span>
-                                        <span style={{ padding: '2px 8px', borderRadius: '10px', background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', fontSize: '11px', fontWeight: 700 }}>{foundChild.status}</span>
-                                    </div>
-                                </div>
-
-                                {/* Academic Summary */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Programas Activos</label>
-                                    {foundChild.programs.map((p: any, idx: number) => (
-                                        <div key={idx} style={{ padding: '12px', borderRadius: '14px', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                <span style={{ fontWeight: 700, fontSize: '14px' }}>{p.name} <span style={{ color: 'var(--brand-orange)' }}>{p.level}</span></span>
-                                                <Activity size={14} color="var(--text-secondary)" />
-                                            </div>
-                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-                                                <Calendar size={12} /> {p.schedule}
-                                            </div>
-                                            <div style={{ width: '100%', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px' }}>
-                                                <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--brand-orange), #ff8a00)', borderRadius: '2px' }} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Parent Contact */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Responsable / Acudiente</label>
-                                    <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--brand-orange-light)', border: '1px solid rgba(232, 93, 4, 0.1)' }}>
-                                        <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--brand-orange)' }}>{foundChild.parent.name} ({foundChild.parent.relation})</div>
+                                    <form onSubmit={handleSaveAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                            <a href={`tel:${foundChild.parent.phone}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <Phone size={12} /> {foundChild.parent.phone}
-                                            </a>
-                                            <a href={`mailto:${foundChild.parent.email}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <Mail size={12} /> {foundChild.parent.email}
-                                            </a>
+                                            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Programa / Servicio</label>
+                                            <select
+                                                required
+                                                value={appointmentProgram}
+                                                onChange={e => setAppointmentProgram(e.target.value)}
+                                                style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }}
+                                            >
+                                                <option value="">Seleccionar...</option>
+                                                <option value="Clase Demo Play & Learn">Clase Demo Play & Learn</option>
+                                                <option value="Clase Demo Gym Music">Clase Demo Gym Music</option>
+                                                <option value="Reposición">Reposición</option>
+                                            </select>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Fecha</label>
+                                            <input type="date" required value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }} />
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Hora</label>
+                                            <input type="time" required value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }} />
+                                        </div>
+                                        <button className="btn-primary" type="submit" style={{ padding: '14px', marginTop: '10px' }}>Confirmar Cita</button>
+                                    </form>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* Profile Header */}
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 12px', borderRadius: '40px', overflow: 'hidden', border: '3px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                                            <img src={foundChild.photo} alt={foundChild.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <div style={{ position: 'absolute', bottom: 0, right: 0, width: '24px', height: '24px', borderRadius: '12px', background: 'var(--brand-orange)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white' }}>
+                                                <Edit2 size={12} color="white" />
+                                            </div>
+                                        </div>
+                                        <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>{foundChild.name}</h3>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>{foundChild.age}</span>
+                                            <span style={{ padding: '2px 8px', borderRadius: '10px', background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', fontSize: '11px', fontWeight: 700 }}>{foundChild.status}</span>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Quick Stats */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                    <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.1)' }}>
-                                        <div style={{ fontSize: '10px', color: 'var(--accent-color)', fontWeight: 700, textTransform: 'uppercase' }}>Asistencia</div>
-                                        <div style={{ fontSize: '16px', fontWeight: 800 }}>{foundChild.attendance}</div>
+                                    {/* Quick Actions Grid */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                        <button
+                                            onClick={() => setIsScheduling(true)}
+                                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.1)', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        >
+                                            <Clock size={18} color="var(--accent-color)" />
+                                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-color)' }}>Programar Cita</span>
+                                        </button>
+                                        <button
+                                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(232, 93, 4, 0.05)', border: '1px solid rgba(232, 93, 4, 0.1)', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        >
+                                            <FileText size={18} color="var(--brand-orange)" />
+                                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-orange)' }}>Pagos / RC</span>
+                                        </button>
                                     </div>
-                                    <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(52,199,89,0.05)', border: '1px solid rgba(52,199,89,0.1)' }}>
-                                        <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase' }}>Vigencia</div>
-                                        <div style={{ fontSize: '13px', fontWeight: 800 }}>{foundChild.vencimiento}</div>
-                                    </div>
-                                </div>
 
-                                <button className="btn-primary" style={{ width: '100%', padding: '12px', fontSize: '13px' }}>
-                                    Ver Historial Completo
-                                    <ExternalLink size={14} style={{ marginLeft: '8px' }} />
-                                </button>
-                            </div>
+                                    {/* Academic Summary */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Programas Activos</label>
+                                        {foundChild.programs.map((p: any, idx: number) => (
+                                            <div key={idx} style={{ padding: '12px', borderRadius: '14px', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '14px' }}>{p.name} <span style={{ color: 'var(--brand-orange)' }}>{p.level}</span></span>
+                                                    <Activity size={14} color="var(--text-secondary)" />
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                                                    <Calendar size={12} /> {p.schedule}
+                                                </div>
+                                                <div style={{ width: '100%', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px' }}>
+                                                    <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--brand-orange), #ff8a00)', borderRadius: '2px' }} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Parent Contact */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Responsable / Acudiente</label>
+                                        <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--brand-orange-light)', border: '1px solid rgba(232, 93, 4, 0.1)' }}>
+                                            <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--brand-orange)', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>{foundChild.parent.name}</span>
+                                                <span style={{ fontSize: '11px', padding: '2px 6px', background: 'white', borderRadius: '6px' }}>{foundChild.parent.relation}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                                                <a href={`tel:${foundChild.parent.phone}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <Phone size={12} /> {foundChild.parent.phone}
+                                                </a>
+                                                <a href={`mailto:${foundChild.parent.email}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <Mail size={12} /> {foundChild.parent.email}
+                                                </a>
+                                            </div>
+                                            <button
+                                                style={{ width: '100%', background: 'white', border: '1px solid rgba(232, 93, 4, 0.2)', borderRadius: '10px', padding: '8px', fontSize: '11px', color: 'var(--brand-orange)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                onMouseEnter={e => (e.currentTarget as any).style.background = 'rgba(232, 93, 4, 0.05)'}
+                                                onMouseLeave={e => (e.currentTarget as any).style.background = 'white'}
+                                            >
+                                                Generar Link de Pago (PSE)
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Stats */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                        <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.1)' }}>
+                                            <div style={{ fontSize: '10px', color: 'var(--accent-color)', fontWeight: 700, textTransform: 'uppercase' }}>Asistencia</div>
+                                            <div style={{ fontSize: '16px', fontWeight: 800 }}>{foundChild.attendance}</div>
+                                        </div>
+                                        <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(52,199,89,0.05)', border: '1px solid rgba(52,199,89,0.1)' }}>
+                                            <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase' }}>Vigencia</div>
+                                            <div style={{ fontSize: '13px', fontWeight: 800 }}>{foundChild.vencimiento}</div>
+                                        </div>
+                                    </div>
+
+                                    <button className="btn-primary" style={{ width: '100%', padding: '12px', fontSize: '13px' }}>
+                                        Ver Perfil en HUNTER
+                                        <ExternalLink size={14} style={{ marginLeft: '8px' }} />
+                                    </button>
+                                </div>
+                            )
                         ) : (
                             <div style={{ textAlign: 'center', marginTop: '40px', color: 'var(--text-secondary)' }}>
                                 <div style={{ width: '100%', padding: '20px', borderRadius: '16px', background: 'rgba(0,0,0,0.02)', border: '1px dashed rgba(0,0,0,0.1)' }}>
