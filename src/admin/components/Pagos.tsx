@@ -48,26 +48,66 @@ export default function Pagos() {
 
             <div className="dashboard-grid">
                 {[
-                    { label: 'Ingresos del Día', val: '$ 1,240,000', color: 'var(--success)', icon: ArrowUpRight, bg: 'rgba(52, 199, 89, 0.05)' },
-                    { label: 'Egresos del Día', val: '$ 150,000', color: 'var(--danger)', icon: ArrowDownRight, bg: 'rgba(255, 59, 48, 0.05)' },
-                    { label: 'Facturas Emitidas', val: '12', color: 'var(--accent-color)', icon: FileText, bg: 'rgba(0, 113, 227, 0.05)' }
+                    { label: 'Ingresos Mensuales', val: '$ 45.2M', trend: '+15%', color: 'var(--success)', icon: ArrowUpRight, bg: 'rgba(52, 199, 89, 0.05)', data: [20, 35, 28, 45] },
+                    { label: 'Egresos Mensuales', val: '$ 12.8M', trend: '-2%', color: 'var(--danger)', icon: ArrowDownRight, bg: 'rgba(255, 59, 48, 0.05)', data: [15, 12, 14, 12.8] },
+                    { label: 'Utilidad Operativa', val: '$ 32.4M', trend: '+18%', color: 'var(--accent-color)', icon: FileText, bg: 'rgba(0, 113, 227, 0.05)', data: [5, 23, 14, 32.4] }
                 ].map((stat, i) => (
                     <div key={i} className="stat-card glass-panel premium-stat-card" style={{
                         gridColumn: 'span 4',
                         padding: '24px',
                         borderLeft: `5px solid ${stat.color}`,
                         background: stat.bg,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
-                            <stat.icon size={18} color={stat.color} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{stat.label}</div>
+                            <div style={{ fontSize: '11px', fontWeight: 800, color: stat.color }}>{stat.trend}</div>
                         </div>
-                        <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px', lineHeight: 1 }}>{stat.val}</div>
+                        <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '12px' }}>{stat.val}</div>
+                        <svg viewBox="0 0 100 20" style={{ width: '100%', height: '30px' }}>
+                            <polyline
+                                fill="none"
+                                stroke={stat.color}
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                points={stat.data.map((v, idx) => `${(idx / 3) * 100},${20 - (v / 50) * 15}`).join(' ')}
+                            />
+                        </svg>
                     </div>
                 ))}
+
+                <div className="chart-card glass-panel" style={{ gridColumn: 'span 12', marginTop: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>Análisis de Flujo de Caja</h3>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Ingresos vs Egresos - Últimos 4 meses</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                                <div style={{ width: 10, height: 10, borderRadius: 2, background: 'var(--success)' }}></div> Ingresos
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}>
+                                <div style={{ width: 10, height: 10, borderRadius: 2, background: 'var(--danger)' }}></div> Egresos
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ height: '180px', width: '100%', display: 'flex', alignItems: 'flex-end', gap: '40px', padding: '0 40px' }}>
+                        {[
+                            { month: 'NOV', in: 60, out: 40 },
+                            { month: 'DIC', in: 90, out: 45 },
+                            { month: 'ENE', in: 75, out: 30 },
+                            { month: 'FEB', in: 100, out: 35 },
+                        ].map((m, i) => (
+                            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '140px', width: '100%', justifyContent: 'center' }}>
+                                    <div style={{ width: '12px', height: `${m.in}%`, background: 'var(--success)', borderRadius: '4px 4px 0 0', opacity: 0.8 }}></div>
+                                    <div style={{ width: '12px', height: `${m.out}%`, background: 'var(--danger)', borderRadius: '4px 4px 0 0', opacity: 0.8 }}></div>
+                                </div>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>{m.month}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
                 <div className="chart-card glass-panel" style={{ gridColumn: 'span 12', marginTop: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>

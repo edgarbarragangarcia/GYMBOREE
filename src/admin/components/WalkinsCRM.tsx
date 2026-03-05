@@ -12,13 +12,83 @@ export default function WalkinsCRM() {
         <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                 <div>
-                    <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Walkins & CRM</h1>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de prospectos, seguimientos y captura de leads.</p>
+                    <h1 style={{ fontSize: '32px', fontWeight: 900, margin: 0, letterSpacing: '-1px' }}>Walkins & CRM</h1>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Análisis de Conversión & Seguimiento de Prospectos</p>
                 </div>
-                <button className="btn-primary" style={{ padding: '10px 20px', fontSize: '14px' }}>
+                <button className="btn-primary" style={{ padding: '12px 24px', fontSize: '14px', borderRadius: '14px' }}>
                     <Plus size={18} />
                     Nuevo Walkin
                 </button>
+            </div>
+
+            {/* CRM Analytics Row */}
+            <div className="dashboard-grid" style={{ marginBottom: '32px' }}>
+                <div className="chart-card glass-panel" style={{ gridColumn: 'span 7' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 20px' }}>Embudo de Conversión (Funnel)</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {[
+                            { label: 'Leads Totales', value: '184', color: 'var(--accent-color)', width: '100%' },
+                            { label: 'Clases Demo', value: '92', color: 'var(--brand-orange)', width: '50%' },
+                            { label: 'Matrículas Cerradas', value: '48', color: 'var(--success)', width: '26%' }
+                        ].map((step, i) => (
+                            <div key={i} style={{ position: 'relative' }}>
+                                <div style={{
+                                    width: step.width,
+                                    height: '44px',
+                                    background: step.color,
+                                    opacity: 0.1,
+                                    borderRadius: '12px',
+                                    border: `1px solid ${step.color}`
+                                }}></div>
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: step.width,
+                                    height: '44px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0 16px',
+                                    fontWeight: 700
+                                }}>
+                                    <span style={{ fontSize: '13px' }}>{step.label}</span>
+                                    <span style={{ fontSize: '15px' }}>{step.value}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={{ marginTop: '20px', display: 'flex', gap: '20px' }}>
+                        <div style={{ padding: '10px 16px', borderRadius: '12px', background: 'rgba(52, 199, 89, 0.05)', flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>Tasa Conversión (L2S)</div>
+                            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--success)' }}>26.1%</div>
+                        </div>
+                        <div style={{ padding: '10px 16px', borderRadius: '12px', background: 'rgba(0, 113, 227, 0.05)', flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>Costo Adquisición (Avg)</div>
+                            <div style={{ fontSize: '18px', fontWeight: 800 }}>$142,000</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="chart-card glass-panel" style={{ gridColumn: 'span 5' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 20px' }}>Velocidad de Captura</h3>
+                    <div style={{ height: '140px', width: '100%', position: 'relative' }}>
+                        <svg viewBox="0 0 300 100" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                            <path d="M0,80 L50,60 L100,75 L150,30 L200,45 L250,10 L300,20" fill="none" stroke="var(--brand-orange)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                            {[0, 50, 100, 150, 200, 250, 300].map((x, i) => (
+                                <circle key={i} cx={x} cy={[80, 60, 75, 30, 45, 10, 20][i]} r="4" fill="white" stroke="var(--brand-orange)" strokeWidth="2" />
+                            ))}
+                        </svg>
+                    </div>
+                    <div style={{ marginTop: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                            <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                        </div>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '12px', fontStyle: 'italic' }}>
+                            * El volumen de leads aumentó un 18% respecto a la semana pasada.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid">
