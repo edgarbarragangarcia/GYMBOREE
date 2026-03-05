@@ -107,9 +107,9 @@ function Sidebar({ activeTab, setActiveTab, isSidebarOpen, toggleSidebar }: {
                     <Home size={20} />
                     {isSidebarOpen && <span>Dashboard</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'walkins' ? 'active' : ''}`} onClick={() => setActiveTab('walkins')} title={!isSidebarOpen ? 'Walkins & CRM' : ''}>
+                <div className={`nav-item ${activeTab === 'walkins' ? 'active' : ''}`} onClick={() => setActiveTab('walkins')} title={!isSidebarOpen ? 'CRM' : ''}>
                     <Target size={20} />
-                    {isSidebarOpen && <span>Walkins & CRM</span>}
+                    {isSidebarOpen && <span>CRM</span>}
                 </div>
                 <div className={`nav-item ${activeTab === 'alumnos' ? 'active' : ''}`} onClick={() => setActiveTab('alumnos')} title={!isSidebarOpen ? 'Alumnos' : ''}>
                     <Users size={20} />

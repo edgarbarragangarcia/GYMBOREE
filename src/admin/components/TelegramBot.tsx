@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, X, FileText } from 'lucide-react';
+import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, X, FileText, Target, Save, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // Cliente apuntando al proyecto HUNTER (no toca la DB de APEG/Gymboree)
@@ -15,6 +15,7 @@ interface Chat {
     last_name: string | null;
     created_at: string;
     updated_at: string;
+    ai_paused?: boolean;
 }
 
 interface Message {
@@ -35,11 +36,29 @@ export default function TelegramBot() {
     const [isTyping, setIsTyping] = useState(false);
     const [loading, setLoading] = useState(true);
     const [childSearch, setChildSearch] = useState('');
+    const [sidebarTab, setSidebarTab] = useState<'crm' | 'academic'>('academic');
     const [foundChild, setFoundChild] = useState<any>(null);
     const [isScheduling, setIsScheduling] = useState(false);
     const [appointmentDate, setAppointmentDate] = useState('');
     const [appointmentTime, setAppointmentTime] = useState('');
     const [appointmentProgram, setAppointmentProgram] = useState('');
+    const [leadNotes, setLeadNotes] = useState('');
+    const [leadStatus, setLeadStatus] = useState('Nuevo');
+    const [familyName, setFamilyName] = useState('');
+    const [childName, setChildName] = useState('');
+    const [childAge, setChildAge] = useState('');
+    const [leadPhone, setLeadPhone] = useState('');
+    const [leadSource, setLeadSource] = useState('Telegram');
+    const [programInterest, setProgramInterest] = useState('');
+    const [currentLeadId, setCurrentLeadId] = useState<string | null>(null);
+    const [nextTaskDate, setNextTaskDate] = useState('');
+    const [nextTaskDesc, setNextTaskDesc] = useState('');
+    const [notification, setNotification] = useState<{ show: boolean, msg: string } | null>(null);
+
+    const showNotify = (msg: string) => {
+        setNotification({ show: true, msg });
+        setTimeout(() => setNotification(null), 3500);
+    };
 
     const handleSaveAppointment = (e: React.FormEvent) => {
         e.preventDefault();
@@ -85,7 +104,139 @@ export default function TelegramBot() {
 
     useEffect(() => {
         selectedChatRef.current = selectedChat;
+        if (selectedChat) {
+            fetchLeadData(selectedChat.id);
+        } else {
+            resetLeadForm();
+        }
     }, [selectedChat]);
+
+    const resetLeadForm = () => {
+        setCurrentLeadId(null);
+        setFamilyName('');
+        setChildName('');
+        setChildAge('');
+        setLeadPhone('');
+        setLeadSource('Telegram');
+        setProgramInterest('');
+        setLeadStatus('Nuevo');
+        setLeadNotes('');
+        setNextTaskDate('');
+        setNextTaskDesc('');
+    };
+
+    const fetchLeadData = async (chatId: number) => {
+        try {
+            const { data } = await hunter
+                .from('crm_leads')
+                .select('*')
+                .eq('telegram_chat_id', chatId)
+                .single();
+
+            if (data) {
+                setCurrentLeadId(data.id);
+                setFamilyName(data.family_name || '');
+                setChildName(data.child_name || '');
+                setChildAge(data.child_age || '');
+                setLeadPhone(data.phone || '');
+                setLeadSource(data.source || 'Telegram');
+                setProgramInterest(data.program_interest || '');
+                setLeadStatus(data.status || 'Nuevo');
+
+                // Try to fetch latest activity to populate notes and next task
+                const { data: latestActivity } = await hunter
+                    .from('crm_activities')
+                    .select('*')
+                    .eq('lead_id', data.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (latestActivity) {
+                    setLeadNotes(latestActivity.content || '');
+                    if (latestActivity.next_task_at) {
+                        // datetime-local format expects YYYY-MM-DDThh:mm
+                        const dateObj = new Date(latestActivity.next_task_at);
+                        // Convert to local time format for the input
+                        const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+                        const localISOTime = (new Date(dateObj.getTime() - tzoffset)).toISOString().slice(0, 16);
+                        setNextTaskDate(localISOTime);
+                    } else {
+                        setNextTaskDate('');
+                    }
+                    setNextTaskDesc(latestActivity.next_task_desc || '');
+                } else {
+                    setLeadNotes('');
+                    setNextTaskDate('');
+                    setNextTaskDesc('');
+                }
+            } else {
+                resetLeadForm();
+                // Si es nuevo, intentar pre-llenar con datos de Telegram
+                if (selectedChat) {
+                    const name = [selectedChat.first_name, selectedChat.last_name].filter(Boolean).join(' ');
+                    setFamilyName(name);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching lead:', err);
+        }
+    };
+
+    const handleSaveLead = async () => {
+        if (!selectedChat) return;
+
+        try {
+            const leadData = {
+                family_name: familyName,
+                child_name: childName,
+                child_age: childAge,
+                phone: leadPhone,
+                source: leadSource,
+                program_interest: programInterest,
+                status: leadStatus,
+                telegram_chat_id: selectedChat.id,
+                updated_at: new Date().toISOString()
+            };
+
+            let leadId = currentLeadId;
+
+            if (currentLeadId) {
+                const { error } = await hunter
+                    .from('crm_leads')
+                    .update(leadData)
+                    .eq('id', currentLeadId);
+                if (error) throw error;
+            } else {
+                const { data, error } = await hunter
+                    .from('crm_leads')
+                    .insert([leadData])
+                    .select()
+                    .single();
+                if (error) throw error;
+                leadId = data.id;
+                setCurrentLeadId(leadId);
+            }
+
+            // Guardar actividad si hay notas
+            if (leadNotes || nextTaskDate) {
+                const { error: actError } = await hunter
+                    .from('crm_activities')
+                    .insert([{
+                        lead_id: leadId,
+                        type: 'Nota',
+                        content: leadNotes,
+                        next_task_at: nextTaskDate ? new Date(nextTaskDate).toISOString() : null,
+                        next_task_desc: nextTaskDesc
+                    }]);
+                if (actError) throw actError;
+            }
+
+            showNotify(currentLeadId ? '¡Lead actualizado con éxito!' : '¡Lead creado y guardado en el CRM!');
+        } catch (err: any) {
+            showNotify('Error al guardar: ' + err.message);
+        }
+    };
 
     useEffect(() => {
         fetchChats();
@@ -222,10 +373,12 @@ export default function TelegramBot() {
                                         cursor: 'pointer',
                                         transition: 'background 0.2s',
                                         borderBottom: '1px solid rgba(0,0,0,0.05)',
-                                        background: selectedChat?.id === chat.id ? 'var(--brand-orange-light)' : 'transparent'
+                                        background: chat.ai_paused
+                                            ? (selectedChat?.id === chat.id ? 'rgba(52, 199, 89, 0.2)' : 'rgba(52, 199, 89, 0.05)')
+                                            : (selectedChat?.id === chat.id ? 'var(--brand-orange-light)' : 'transparent')
                                     }}
-                                    onMouseEnter={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.02)'; }}
-                                    onMouseLeave={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                                    onMouseEnter={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = chat.ai_paused ? 'rgba(52, 199, 89, 0.1)' : 'rgba(0,0,0,0.02)'; }}
+                                    onMouseLeave={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = chat.ai_paused ? 'rgba(52, 199, 89, 0.05)' : 'transparent'; }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ width: '42px', height: '42px', borderRadius: '21px', background: 'linear-gradient(135deg, #0088cc, #0055aa)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,136,204,0.2)' }}>
@@ -271,7 +424,28 @@ export default function TelegramBot() {
                                         <div style={{ fontSize: '12px', color: '#4CAF50', fontWeight: 500 }}>@{selectedChat.username || 'sin_usuario'} · En línea</div>
                                     </div>
                                 </div>
-                                <MoreVertical size={20} color="var(--text-secondary)" style={{ cursor: 'pointer' }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <button
+                                        onClick={async () => {
+                                            const newStatus = !selectedChat.ai_paused;
+                                            await hunter.from('tg_chats').update({ ai_paused: newStatus }).eq('id', selectedChat.id);
+                                            setSelectedChat({ ...selectedChat, ai_paused: newStatus });
+                                        }}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            border: selectedChat.ai_paused ? '1px solid rgba(52, 199, 89, 0.3)' : '1px solid rgba(0, 136, 204, 0.3)',
+                                            background: selectedChat.ai_paused ? 'rgba(52, 199, 89, 0.1)' : 'rgba(0, 136, 204, 0.1)',
+                                            color: selectedChat.ai_paused ? 'var(--success)' : '#0088cc',
+                                            fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <Bot size={14} />
+                                        {selectedChat.ai_paused ? 'Responde Humano' : 'Bot AI Activo'}
+                                    </button>
+                                    <MoreVertical size={20} color="var(--text-secondary)" style={{ cursor: 'pointer' }} />
+                                </div>
                             </div>
 
                             {/* Mensajes */}
@@ -376,163 +550,358 @@ export default function TelegramBot() {
                     )}
                 </div>
 
-                {/* Sidebar de Información del Niño (Nuevo) */}
+                {/* Sidebar de Información (CRM / Académica) */}
                 {
                     selectedChat && (
-                        <div className="glass-panel" style={{ width: '320px', display: 'flex', flexDirection: 'column', borderRadius: '20px', overflow: 'hidden', flexShrink: 0, animation: 'fadeIn 0.3s ease' }}>
-                            <div style={{ padding: '20px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                                    <Baby size={20} color="var(--brand-orange)" />
-                                    <h2 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Información Académica</h2>
+                        <div className="glass-panel" style={{ width: '360px', display: 'flex', flexDirection: 'column', borderRadius: '20px', overflow: 'hidden', flexShrink: 0, animation: 'fadeIn 0.3s ease' }}>
+                            <div style={{ padding: '20px', background: 'rgba(0,0,0,0.02)', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.05)', padding: '4px', borderRadius: '12px', marginBottom: '16px' }}>
+                                    <button
+                                        onClick={() => setSidebarTab('crm')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '8px',
+                                            fontSize: '11px',
+                                            borderRadius: '9px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: 700,
+                                            background: sidebarTab === 'crm' ? 'white' : 'transparent',
+                                            color: sidebarTab === 'crm' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                            boxShadow: sidebarTab === 'crm' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Gestionar LEAD EN CRM
+                                    </button>
+                                    <button
+                                        onClick={() => setSidebarTab('academic')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '8px',
+                                            fontSize: '11px',
+                                            borderRadius: '9px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: 700,
+                                            background: sidebarTab === 'academic' ? 'white' : 'transparent',
+                                            color: sidebarTab === 'academic' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                            boxShadow: sidebarTab === 'academic' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Información Académica
+                                    </button>
                                 </div>
-                                <form onSubmit={handleChildSearch} style={{ background: 'rgba(0,0,0,0.03)', borderRadius: '10px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                                    <Search size={14} color="var(--text-secondary)" />
-                                    <input
-                                        type="text"
-                                        value={childSearch}
-                                        onChange={e => setChildSearch(e.target.value)}
-                                        placeholder="Buscar niño (Ej. Agustin)..."
-                                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '13px', width: '100%', outline: 'none' }}
-                                    />
-                                </form>
+
+                                {sidebarTab === 'academic' ? (
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                            <Baby size={18} color="var(--brand-orange)" />
+                                            <h2 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Historial Académico</h2>
+                                        </div>
+                                        <form onSubmit={handleChildSearch} style={{ background: 'white', borderRadius: '10px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(0,0,0,0.1)' }}>
+                                            <Search size={14} color="var(--text-secondary)" />
+                                            <input
+                                                type="text"
+                                                value={childSearch}
+                                                onChange={e => setChildSearch(e.target.value)}
+                                                placeholder="Buscar niño (Ej. Agustin)..."
+                                                style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '12px', width: '100%', outline: 'none' }}
+                                            />
+                                        </form>
+                                    </>
+                                ) : (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Target size={18} color="var(--brand-orange)" />
+                                        <h2 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>Gestión de Prospecto</h2>
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-                                {foundChild ? (
-                                    isScheduling ? (
-                                        <div style={{ animation: 'fadeIn 0.3s ease' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                                                <button onClick={() => setIsScheduling(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
-                                                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Programar Cita</h3>
-                                            </div>
-                                            <form onSubmit={handleSaveAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Programa / Servicio</label>
-                                                    <select
-                                                        required
-                                                        value={appointmentProgram}
-                                                        onChange={e => setAppointmentProgram(e.target.value)}
-                                                        style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }}
-                                                    >
-                                                        <option value="">Seleccionar...</option>
-                                                        <option value="Clase Demo Play & Learn">Clase Demo Play & Learn</option>
-                                                        <option value="Clase Demo Gym Music">Clase Demo Gym Music</option>
-                                                        <option value="Reposición">Reposición</option>
-                                                    </select>
+                                {sidebarTab === 'academic' ? (
+                                    foundChild ? (
+                                        isScheduling ? (
+                                            <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                                                    <button onClick={() => setIsScheduling(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
+                                                    <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Programar Cita</h3>
                                                 </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Fecha</label>
-                                                    <input type="date" required value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }} />
-                                                </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Hora</label>
-                                                    <input type="time" required value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }} />
-                                                </div>
-                                                <button className="btn-primary" type="submit" style={{ padding: '14px', marginTop: '10px' }}>Confirmar Cita</button>
-                                            </form>
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                            {/* Profile Header */}
-                                            <div style={{ textAlign: 'center' }}>
-                                                <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 12px', borderRadius: '40px', overflow: 'hidden', border: '3px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                                                    <img src={foundChild.photo} alt={foundChild.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: '24px', height: '24px', borderRadius: '12px', background: 'var(--brand-orange)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white' }}>
-                                                        <Edit2 size={12} color="white" />
+                                                <form onSubmit={handleSaveAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Programa / Servicio</label>
+                                                        <select
+                                                            required
+                                                            value={appointmentProgram}
+                                                            onChange={e => setAppointmentProgram(e.target.value)}
+                                                            style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }}
+                                                        >
+                                                            <option value="">Seleccionar...</option>
+                                                            <option value="Clase Demo Play & Learn">Clase Demo Play & Learn</option>
+                                                            <option value="Clase Demo Gym Music">Clase Demo Gym Music</option>
+                                                            <option value="Reposición">Reposición</option>
+                                                        </select>
                                                     </div>
-                                                </div>
-                                                <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>{foundChild.name}</h3>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                                                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>{foundChild.age}</span>
-                                                    <span style={{ padding: '2px 8px', borderRadius: '10px', background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', fontSize: '11px', fontWeight: 700 }}>{foundChild.status}</span>
-                                                </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Fecha</label>
+                                                        <input type="date" required value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }} />
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Hora</label>
+                                                        <input type="time" required value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px' }} />
+                                                    </div>
+                                                    <button className="btn-primary" type="submit" style={{ padding: '14px', marginTop: '10px' }}>Confirmar Cita</button>
+                                                </form>
                                             </div>
-
-                                            {/* Quick Actions Grid */}
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                                <button
-                                                    onClick={() => setIsScheduling(true)}
-                                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.1)', cursor: 'pointer', transition: 'all 0.2s' }}
-                                                >
-                                                    <Clock size={18} color="var(--accent-color)" />
-                                                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-color)' }}>Programar Cita</span>
-                                                </button>
-                                                <button
-                                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(232, 93, 4, 0.05)', border: '1px solid rgba(232, 93, 4, 0.1)', cursor: 'pointer', transition: 'all 0.2s' }}
-                                                >
-                                                    <FileText size={18} color="var(--brand-orange)" />
-                                                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-orange)' }}>Pagos / RC</span>
-                                                </button>
-                                            </div>
-
-                                            {/* Academic Summary */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Programas Activos</label>
-                                                {foundChild.programs.map((p: any, idx: number) => (
-                                                    <div key={idx} style={{ padding: '12px', borderRadius: '14px', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                            <span style={{ fontWeight: 700, fontSize: '14px' }}>{p.name} <span style={{ color: 'var(--brand-orange)' }}>{p.level}</span></span>
-                                                            <Activity size={14} color="var(--text-secondary)" />
-                                                        </div>
-                                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-                                                            <Calendar size={12} /> {p.schedule}
-                                                        </div>
-                                                        <div style={{ width: '100%', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px' }}>
-                                                            <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--brand-orange), #ff8a00)', borderRadius: '2px' }} />
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                                {/* Profile Header */}
+                                                <div style={{ textAlign: 'center' }}>
+                                                    <div style={{ position: 'relative', width: '80px', height: '80px', margin: '0 auto 12px', borderRadius: '40px', overflow: 'hidden', border: '3px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                                                        <img src={foundChild.photo} alt={foundChild.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        <div style={{ position: 'absolute', bottom: 0, right: 0, width: '24px', height: '24px', borderRadius: '12px', background: 'var(--brand-orange)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white' }}>
+                                                            <Edit2 size={12} color="white" />
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                    <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>{foundChild.name}</h3>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>{foundChild.age}</span>
+                                                        <span style={{ padding: '2px 8px', borderRadius: '10px', background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', fontSize: '11px', fontWeight: 700 }}>{foundChild.status}</span>
+                                                    </div>
+                                                </div>
 
-                                            {/* Parent Contact */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Responsable / Acudiente</label>
-                                                <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--brand-orange-light)', border: '1px solid rgba(232, 93, 4, 0.1)' }}>
-                                                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--brand-orange)', display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span>{foundChild.parent.name}</span>
-                                                        <span style={{ fontSize: '11px', padding: '2px 6px', background: 'white', borderRadius: '6px' }}>{foundChild.parent.relation}</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                                                        <a href={`tel:${foundChild.parent.phone}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <Phone size={12} /> {foundChild.parent.phone}
-                                                        </a>
-                                                        <a href={`mailto:${foundChild.parent.email}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <Mail size={12} /> {foundChild.parent.email}
-                                                        </a>
-                                                    </div>
+                                                {/* Quick Actions Grid */}
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                                     <button
-                                                        style={{ width: '100%', background: 'white', border: '1px solid rgba(232, 93, 4, 0.2)', borderRadius: '10px', padding: '8px', fontSize: '11px', color: 'var(--brand-orange)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
-                                                        onMouseEnter={e => (e.currentTarget as any).style.background = 'rgba(232, 93, 4, 0.05)'}
-                                                        onMouseLeave={e => (e.currentTarget as any).style.background = 'white'}
+                                                        onClick={() => setIsScheduling(true)}
+                                                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.1)', cursor: 'pointer', transition: 'all 0.2s' }}
                                                     >
-                                                        Generar Link de Pago (PSE)
+                                                        <Clock size={18} color="var(--accent-color)" />
+                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-color)' }}>Programar Cita</span>
+                                                    </button>
+                                                    <button
+                                                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '12px', borderRadius: '14px', background: 'rgba(232, 93, 4, 0.05)', border: '1px solid rgba(232, 93, 4, 0.1)', cursor: 'pointer', transition: 'all 0.2s' }}
+                                                    >
+                                                        <FileText size={18} color="var(--brand-orange)" />
+                                                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-orange)' }}>Pagos / RC</span>
                                                     </button>
                                                 </div>
-                                            </div>
 
-                                            {/* Quick Stats */}
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                                                <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.1)' }}>
-                                                    <div style={{ fontSize: '10px', color: 'var(--accent-color)', fontWeight: 700, textTransform: 'uppercase' }}>Asistencia</div>
-                                                    <div style={{ fontSize: '16px', fontWeight: 800 }}>{foundChild.attendance}</div>
+                                                {/* Academic Summary */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Programas Activos</label>
+                                                    {foundChild.programs.map((p: any, idx: number) => (
+                                                        <div key={idx} style={{ padding: '12px', borderRadius: '14px', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                                <span style={{ fontWeight: 700, fontSize: '14px' }}>{p.name} <span style={{ color: 'var(--brand-orange)' }}>{p.level}</span></span>
+                                                                <Activity size={14} color="var(--text-secondary)" />
+                                                            </div>
+                                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                                                                <Calendar size={12} /> {p.schedule}
+                                                            </div>
+                                                            <div style={{ width: '100%', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px' }}>
+                                                                <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--brand-orange), #ff8a00)', borderRadius: '2px' }} />
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                                <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(52,199,89,0.05)', border: '1px solid rgba(52,199,89,0.1)' }}>
-                                                    <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase' }}>Vigencia</div>
-                                                    <div style={{ fontSize: '13px', fontWeight: 800 }}>{foundChild.vencimiento}</div>
-                                                </div>
-                                            </div>
 
-                                            <button className="btn-primary" style={{ width: '100%', padding: '12px', fontSize: '13px' }}>
-                                                Ver Perfil en HUNTER
-                                                <ExternalLink size={14} style={{ marginLeft: '8px' }} />
-                                            </button>
+                                                {/* Parent Contact */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Responsable / Acudiente</label>
+                                                    <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--brand-orange-light)', border: '1px solid rgba(232, 93, 4, 0.1)' }}>
+                                                        <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--brand-orange)', display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span>{foundChild.parent.name}</span>
+                                                            <span style={{ fontSize: '11px', padding: '2px 6px', background: 'white', borderRadius: '6px' }}>{foundChild.parent.relation}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                                                            <a href={`tel:${foundChild.parent.phone}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <Phone size={12} /> {foundChild.parent.phone}
+                                                            </a>
+                                                            <a href={`mailto:${foundChild.parent.email}`} style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <Mail size={12} /> {foundChild.parent.email}
+                                                            </a>
+                                                        </div>
+                                                        <button
+                                                            style={{ width: '100%', background: 'white', border: '1px solid rgba(232, 93, 4, 0.2)', borderRadius: '10px', padding: '8px', fontSize: '11px', color: 'var(--brand-orange)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+                                                            onMouseEnter={e => (e.currentTarget as any).style.background = 'rgba(232, 93, 4, 0.05)'}
+                                                            onMouseLeave={e => (e.currentTarget as any).style.background = 'white'}
+                                                        >
+                                                            Generar Link de Pago (PSE)
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Quick Stats */}
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                                    <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,113,227,0.05)', border: '1px solid rgba(0,113,227,0.1)' }}>
+                                                        <div style={{ fontSize: '10px', color: 'var(--accent-color)', fontWeight: 700, textTransform: 'uppercase' }}>Asistencia</div>
+                                                        <div style={{ fontSize: '16px', fontWeight: 800 }}>{foundChild.attendance}</div>
+                                                    </div>
+                                                    <div style={{ padding: '12px', borderRadius: '12px', background: 'rgba(52,199,89,0.05)', border: '1px solid rgba(52,199,89,0.1)' }}>
+                                                        <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 700, textTransform: 'uppercase' }}>Vigencia</div>
+                                                        <div style={{ fontSize: '13px', fontWeight: 800 }}>{foundChild.vencimiento}</div>
+                                                    </div>
+                                                </div>
+
+                                                <button className="btn-primary" style={{ width: '100%', padding: '12px', fontSize: '13px' }}>
+                                                    Ver Perfil en HUNTER
+                                                    <ExternalLink size={14} style={{ marginLeft: '8px' }} />
+                                                </button>
+                                            </div>
+                                        )
+                                    ) : (
+                                        <div style={{ textAlign: 'center', marginTop: '40px', color: 'var(--text-secondary)' }}>
+                                            <div style={{ width: '100%', padding: '20px', borderRadius: '16px', background: 'rgba(0,0,0,0.02)', border: '1px dashed rgba(0,0,0,0.1)' }}>
+                                                <Search size={32} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                                                <p style={{ fontSize: '13px', margin: 0 }}>Busca un niño por nombre para ver su ficha técnica.</p>
+                                            </div>
                                         </div>
                                     )
                                 ) : (
-                                    <div style={{ textAlign: 'center', marginTop: '40px', color: 'var(--text-secondary)' }}>
-                                        <div style={{ width: '100%', padding: '20px', borderRadius: '16px', background: 'rgba(0,0,0,0.02)', border: '1px dashed rgba(0,0,0,0.1)' }}>
-                                            <Search size={32} style={{ opacity: 0.3, marginBottom: '12px' }} />
-                                            <p style={{ fontSize: '13px', margin: 0 }}>Busca un niño por nombre para ver su ficha técnica.</p>
+                                    /* CRM VIEW (Lead Management) */
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                        {/* Campos del Lead */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Nombre del Lead</label>
+                                                    <input
+                                                        type="text"
+                                                        value={familyName}
+                                                        onChange={e => setFamilyName(e.target.value)}
+                                                        placeholder="Ej: Familia Gómez o Nombre Cliente"
+                                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px' }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Nombre Niño</label>
+                                                    <input
+                                                        type="text"
+                                                        value={childName}
+                                                        onChange={e => setChildName(e.target.value)}
+                                                        placeholder="Santiago"
+                                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px' }}
+                                                    />
+                                                </div>
+                                                <div style={{ width: '100px' }}>
+                                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Edad</label>
+                                                    <input
+                                                        type="text"
+                                                        value={childAge}
+                                                        onChange={e => setChildAge(e.target.value)}
+                                                        placeholder="2 años"
+                                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px' }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Teléfono de Contacto</label>
+                                                <input
+                                                    type="tel"
+                                                    value={leadPhone}
+                                                    onChange={e => setLeadPhone(e.target.value)}
+                                                    placeholder="311 555 1234"
+                                                    style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px' }}
+                                                />
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Origen / Canal</label>
+                                                    <select
+                                                        value={leadSource}
+                                                        onChange={e => setLeadSource(e.target.value)}
+                                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white' }}
+                                                    >
+                                                        <option value="Telegram">Telegram</option>
+                                                        <option value="WhatsApp">WhatsApp</option>
+                                                        <option value="Instagram">Instagram</option>
+                                                        <option value="Presencial">Presencial</option>
+                                                        <option value="Llamada">Llamada</option>
+                                                    </select>
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Programa Interés</label>
+                                                    <select
+                                                        value={programInterest}
+                                                        onChange={e => setProgramInterest(e.target.value)}
+                                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '13px', background: 'white' }}
+                                                    >
+                                                        <option value="">Seleccionar...</option>
+                                                        <option value="Play & Learn">Play & Learn</option>
+                                                        <option value="Gym Music">Gym Music</option>
+                                                        <option value="School Skills">School Skills</option>
+                                                        <option value="Art">Art</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Estado y Notas */}
+                                        <div style={{ padding: '16px', borderRadius: '16px', background: 'rgba(232, 93, 4, 0.03)', border: '1px solid rgba(232, 93, 4, 0.08)' }}>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Estado Actual</div>
+                                            <select
+                                                value={leadStatus}
+                                                onChange={e => setLeadStatus(e.target.value)}
+                                                style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '13px', fontWeight: 600, color: 'var(--brand-orange)', marginBottom: '16px' }}
+                                            >
+                                                <option value="Nuevo">Nuevo</option>
+                                                <option value="En Seguimiento">En Seguimiento</option>
+                                                <option value="Clase Demo Programada">Clase Demo Programada</option>
+                                                <option value="Matriculado">Matriculado</option>
+                                                <option value="No Interesado">No Interesado</option>
+                                            </select>
+
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Notas de Seguimiento</div>
+                                            <textarea
+                                                value={leadNotes}
+                                                onChange={e => setLeadNotes(e.target.value)}
+                                                placeholder="Registra avances, llamadas o compromisos..."
+                                                style={{ width: '100%', height: '80px', padding: '12px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '12px', resize: 'none', outline: 'none', transition: 'all 0.2s', marginBottom: '12px' }}
+                                            />
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Próxima Tarea</label>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={nextTaskDate}
+                                                        onChange={e => setNextTaskDate(e.target.value)}
+                                                        style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '12px' }}
+                                                    />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={nextTaskDesc}
+                                                    onChange={e => setNextTaskDesc(e.target.value)}
+                                                    placeholder="¿Qué hay que hacer?"
+                                                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '12px' }}
+                                                />
+                                            </div>
+
+                                            <button
+                                                onClick={handleSaveLead}
+                                                className="btn-primary"
+                                                style={{ width: '100%', padding: '14px', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                            >
+                                                <Save size={18} />
+                                                {currentLeadId ? 'Actualizar Lead' : 'Crear Lead en CRM'}
+                                            </button>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                            <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', border: 'none', fontSize: '12px', fontWeight: 700 }}>
+                                                <Phone size={14} /> Llamar
+                                            </button>
+                                            <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderRadius: '10px', background: 'rgba(0, 113, 227, 0.1)', color: 'var(--accent-color)', border: 'none', fontSize: '12px', fontWeight: 700 }}>
+                                                <Mail size={14} /> Email
+                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -541,15 +910,45 @@ export default function TelegramBot() {
                             <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(0,0,0,0.01)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
                                     <Hash size={12} />
-                                    <span>ID: {foundChild?.id || '---'}</span>
+                                    <span>ID: {sidebarTab === 'academic' ? (foundChild?.id || '---') : (selectedChat?.id || '---')}</span>
                                 </div>
                             </div>
                         </div>
                     )
                 }
 
+                {/* Notificación Flotante Premium */}
+                {notification && (
+                    <div style={{
+                        position: 'fixed',
+                        bottom: '30px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(10px)',
+                        padding: '16px 24px',
+                        borderRadius: '20px',
+                        boxShadow: '0 15px 35px rgba(0,0,0,0.15), 0 5px 15px rgba(232, 93, 4, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        zIndex: 10000,
+                        border: '1px solid rgba(232, 93, 4, 0.2)',
+                        animation: 'slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: 'rgba(52, 199, 89, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CheckCircle size={20} color="var(--success)" />
+                        </div>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{notification.msg}</span>
+                    </div>
+                )}
+
                 <style>{`
-                    @keyframes bounce {
+                @keyframes slideUp {
+                    from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+                    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+                }
+                @keyframes bounce {
                         0%, 60%, 100% { transform: translateY(0); }
                         30% { transform: translateY(-5px); }
                     }
