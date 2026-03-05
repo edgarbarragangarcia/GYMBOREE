@@ -220,7 +220,7 @@ export default function WalkinsCRM() {
         // Suscripción en tiempo real
         const channel = hunter
             .channel('crm_leads_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_leads' }, () => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'gym_crm_leads' }, () => {
                 fetchLeads();
             })
             .subscribe();

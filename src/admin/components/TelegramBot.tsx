@@ -248,7 +248,7 @@ export default function TelegramBot() {
     const checkAndSetInterest = async (chatId: number, text: string) => {
         const lowerText = text.toLowerCase();
         if (lowerText.includes('agendar') || lowerText.includes('cita') || lowerText.includes('programar')) {
-            await hunter.from('tg_chats').update({ ai_paused: true }).eq('id', chatId);
+            await hunter.from('gym_tg_chats').update({ ai_paused: true }).eq('id', chatId);
             fetchChats();
         }
     };
@@ -263,31 +263,64 @@ export default function TelegramBot() {
     useEffect(() => {
         fetchChats();
 
-        // Suscripción Realtime a HUNTER
+        // Suscripción Realtime a HUNTER con canal único
         const channel = hunter
-            .channel('gymboree_telegram')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tg_messages' }, (payload) => {
-                const newMsg = payload.new as Message;
+            .channel('gym_bot_realtime_' + Date.now())
+            // Escuchar cambios en mensajes
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'gym_tg_messages' },
+                (payload) => {
+                    console.log('Realtime MSG Payload:', payload);
+                    const newMsg = payload.new as Message;
+                    if (!newMsg || !newMsg.chat_id) return;
 
-                // Si el mensaje es del usuario, revisar interés
-                if (!newMsg.from_bot) {
-                    checkAndSetInterest(newMsg.chat_id, newMsg.text);
+                    // Lógica de detección de interés
+                    if (payload.eventType === 'INSERT' && !newMsg.from_bot) {
+                        checkAndSetInterest(Number(newMsg.chat_id), newMsg.text);
+                    }
+
+                    // Actualizar ventana de chat
+                    const currentChatId = selectedChatRef.current?.id;
+                    if (currentChatId && Number(newMsg.chat_id) === Number(currentChatId)) {
+                        setMessages(prev => {
+                            const exists = prev.find(m => m.id === newMsg.id);
+                            if (exists && payload.eventType === 'UPDATE') {
+                                return prev.map(m => m.id === newMsg.id ? newMsg : m);
+                            }
+                            if (!exists && (payload.eventType === 'INSERT')) {
+                                return [...prev, newMsg];
+                            }
+                            return prev;
+                        });
+                    }
+
+                    // Siempre refrescar chats para el orden y último mensaje
+                    fetchChats();
                 }
+            )
+            // Escuchar cambios en chats
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'gym_tg_chats' },
+                (payload) => {
+                    console.log('Realtime CHAT Payload:', payload);
+                    fetchChats();
 
-                if (selectedChatRef.current && newMsg.chat_id === selectedChatRef.current.id) {
-                    setMessages(prev => {
-                        if (prev.find(m => m.id === newMsg.id)) return prev;
-                        return [...prev, newMsg];
-                    });
+                    // Si el chat seleccionado cambió externamente (ej: ai_paused)
+                    const currentChat = selectedChatRef.current;
+                    const updatedChat = payload.new as Chat;
+                    if (currentChat && updatedChat && Number(updatedChat.id) === Number(currentChat.id)) {
+                        setSelectedChat(prev => prev ? { ...prev, ...updatedChat } : null);
+                    }
                 }
-                fetchChats();
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tg_chats' }, () => {
-                fetchChats();
-            })
-            .subscribe();
+            )
+            .subscribe((status, err) => {
+                console.log('Realtime Status:', status);
+                if (err) console.error('Realtime Subscribe Error:', err);
+            });
 
-        return () => { hunter.removeChannel(channel); };
+        return () => {
+            hunter.removeChannel(channel);
+        };
     }, []);
 
     useEffect(() => {
@@ -320,14 +353,27 @@ export default function TelegramBot() {
         setIsTyping(true);
 
         try {
+            // Optimistic Update: Mostrar mensaje inmediatamente
+            const tempId = 'temp-' + Date.now();
+            const optimisticMsg = {
+                id: tempId,
+                chat_id: selectedChat.id,
+                text: textToSend,
+                from_bot: true,
+                created_at: new Date().toISOString()
+            };
+            setMessages(prev => [...prev, optimisticMsg]);
+
             // 1. Enviar al usuario por Telegram
-            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat_id: selectedChat.id, text: textToSend })
             });
 
-            // 2. Guardar en HUNTER (from_bot=true significa que lo envió el admin)
+            if (!response.ok) throw new Error('Telegram API error');
+
+            // 2. Guardar en HUNTER
             await hunter.from('gym_tg_messages').insert({
                 chat_id: selectedChat.id,
                 text: textToSend,
@@ -336,6 +382,11 @@ export default function TelegramBot() {
 
             // 3. Actualizar updated_at del chat
             await hunter.from('gym_tg_chats').update({ updated_at: new Date().toISOString() }).eq('id', selectedChat.id);
+
+            // Eliminar el mensaje optimista después de un momento para que el Realtime tome su lugar
+            setTimeout(() => {
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+            }, 1000);
 
         } catch (err) {
             console.error('Error enviando mensaje:', err);
