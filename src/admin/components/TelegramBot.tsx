@@ -135,7 +135,7 @@ export default function TelegramBot() {
     const fetchLeadData = async (chatId: number) => {
         try {
             const { data } = await hunter
-                .from('crm_leads')
+                .from('gym_crm_leads')
                 .select('*')
                 .eq('telegram_chat_id', chatId)
                 .single();
@@ -152,7 +152,7 @@ export default function TelegramBot() {
 
                 // Try to fetch latest activity to populate notes and next task
                 const { data: latestActivity } = await hunter
-                    .from('crm_activities')
+                    .from('gym_crm_activities')
                     .select('*')
                     .eq('lead_id', data.id)
                     .order('created_at', { ascending: false })
@@ -210,13 +210,13 @@ export default function TelegramBot() {
 
             if (currentLeadId) {
                 const { error } = await hunter
-                    .from('crm_leads')
+                    .from('gym_crm_leads')
                     .update(leadData)
                     .eq('id', currentLeadId);
                 if (error) throw error;
             } else {
                 const { data, error } = await hunter
-                    .from('crm_leads')
+                    .from('gym_crm_leads')
                     .insert([leadData])
                     .select()
                     .single();
@@ -228,7 +228,7 @@ export default function TelegramBot() {
             // Guardar actividad si hay notas
             if (leadNotes || nextTaskDate) {
                 const { error: actError } = await hunter
-                    .from('crm_activities')
+                    .from('gym_crm_activities')
                     .insert([{
                         lead_id: leadId,
                         type: 'Nota',
@@ -301,13 +301,13 @@ export default function TelegramBot() {
     }, [messages, isTyping]);
 
     const fetchChats = async () => {
-        const { data } = await hunter.from('tg_chats').select('*').order('updated_at', { ascending: false });
+        const { data } = await hunter.from('gym_tg_chats').select('*').order('updated_at', { ascending: false });
         setChats(data || []);
         setLoading(false);
     };
 
     const fetchMessages = async (chatId: number) => {
-        const { data } = await hunter.from('tg_messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
+        const { data } = await hunter.from('gym_tg_messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true });
         setMessages(data || []);
     };
 
@@ -328,14 +328,14 @@ export default function TelegramBot() {
             });
 
             // 2. Guardar en HUNTER (from_bot=true significa que lo envió el admin)
-            await hunter.from('tg_messages').insert({
+            await hunter.from('gym_tg_messages').insert({
                 chat_id: selectedChat.id,
                 text: textToSend,
                 from_bot: true
             });
 
             // 3. Actualizar updated_at del chat
-            await hunter.from('tg_chats').update({ updated_at: new Date().toISOString() }).eq('id', selectedChat.id);
+            await hunter.from('gym_tg_chats').update({ updated_at: new Date().toISOString() }).eq('id', selectedChat.id);
 
         } catch (err) {
             console.error('Error enviando mensaje:', err);
@@ -463,7 +463,7 @@ export default function TelegramBot() {
                                     <button
                                         onClick={async () => {
                                             const newStatus = !selectedChat.ai_paused;
-                                            await hunter.from('tg_chats').update({ ai_paused: newStatus }).eq('id', selectedChat.id);
+                                            await hunter.from('gym_tg_chats').update({ ai_paused: newStatus }).eq('id', selectedChat.id);
                                             setSelectedChat({ ...selectedChat, ai_paused: newStatus });
                                         }}
                                         style={{

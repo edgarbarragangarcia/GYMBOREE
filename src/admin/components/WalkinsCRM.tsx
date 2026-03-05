@@ -31,6 +31,34 @@ export default function WalkinsCRM() {
 
     const KANBAN_STATUSES = ['Nuevo', 'Contactado', 'En Seguimiento', 'Clase Demo Programada', 'Demo Asistida', 'Matriculado', 'Perdido / No Interesado'];
 
+    const handleDragStart = (e: React.DragEvent, leadId: string) => {
+        e.dataTransfer.setData('leadId', leadId);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+        e.preventDefault();
+        const leadId = e.dataTransfer.getData('leadId');
+        if (!leadId) return;
+
+        // Optimistic UI
+        setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus, updated_at: new Date().toISOString() } : l));
+
+        try {
+            const { error } = await hunter
+                .from('gym_crm_leads')
+                .update({ status: newStatus, updated_at: new Date().toISOString() })
+                .eq('id', leadId);
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error updating status via drag-drop:', err);
+            fetchLeads(); // Rollback
+        }
+    };
+
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, viewMode]);
@@ -58,7 +86,7 @@ export default function WalkinsCRM() {
         try {
             setLoadingLeads(true);
             const { data, error } = await hunter
-                .from('crm_leads')
+                .from('gym_crm_leads')
                 .select('*')
                 .order('created_at', { ascending: false });
 
@@ -80,7 +108,7 @@ export default function WalkinsCRM() {
         try {
             setIsDeletingLoading(true);
             const { error } = await hunter
-                .from('crm_leads')
+                .from('gym_crm_leads')
                 .delete()
                 .eq('id', leadId);
 
@@ -106,7 +134,7 @@ export default function WalkinsCRM() {
 
         try {
             const { data } = await hunter
-                .from('crm_activities')
+                .from('gym_crm_activities')
                 .select('*')
                 .eq('lead_id', lead.id)
                 .order('created_at', { ascending: false });
@@ -127,7 +155,7 @@ export default function WalkinsCRM() {
         setLeadActivities(prev => prev.map(a => a.id === activityId ? { ...a, task_status: newStatus } : a));
         try {
             const { error } = await hunter
-                .from('crm_activities')
+                .from('gym_crm_activities')
                 .update({ task_status: newStatus })
                 .eq('id', activityId);
             if (error) throw error;
@@ -147,7 +175,7 @@ export default function WalkinsCRM() {
 
             // Actualizar Lead
             const { error: leadError } = await hunter
-                .from('crm_leads')
+                .from('gym_crm_leads')
                 .update({
                     status: activityStatus,
                     updated_at: new Date().toISOString()
@@ -159,7 +187,7 @@ export default function WalkinsCRM() {
             // Registrar Actividad
             if (notes || nextTaskDate) {
                 const { error: activityError } = await hunter
-                    .from('crm_activities')
+                    .from('gym_crm_activities')
                     .insert({
                         lead_id: selectedLead.id,
                         type: 'Seguimiento',
@@ -537,7 +565,11 @@ export default function WalkinsCRM() {
 
                                     return (
                                         <div key={status} style={{ minWidth: '320px', background: columnBg, borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <div
+                                                onDragOver={handleDragOver}
+                                                onDrop={(e) => handleDrop(e, status)}
+                                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}
+                                            >
                                                 <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: columnColor }}>{status}</h4>
                                                 <span style={{ padding: '2px 10px', background: 'white', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: columnColor, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>{statusLeads.length}</span>
                                             </div>
@@ -545,7 +577,13 @@ export default function WalkinsCRM() {
                                             {statusLeads.map(lead => {
                                                 const diasInactivo = calculateDaysInactive(lead.updated_at);
                                                 return (
-                                                    <div key={lead.id} style={{ background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid rgba(0,0,0,0.05)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                                                    <div
+                                                        key={lead.id}
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, lead.id)}
+                                                        style={{ background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid rgba(0,0,0,0.05)', transition: 'all 0.2s ease', position: 'relative' }}
+                                                        className="kanban-card"
+                                                    >
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                             <div>
                                                                 <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>{lead.family_name || 'Sin Apellido'}</div>
@@ -566,7 +604,13 @@ export default function WalkinsCRM() {
                                                 );
                                             })}
                                             {statusLeads.length === 0 && (
-                                                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic', opacity: 0.6 }}>No hay prospectos aquí</div>
+                                                <div
+                                                    onDragOver={handleDragOver}
+                                                    onDrop={(e) => handleDrop(e, status)}
+                                                    style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic', opacity: 0.6, flex: 1, minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(0,0,0,0.03)', borderRadius: '12px' }}
+                                                >
+                                                    Suelta aquí
+                                                </div>
                                             )}
                                         </div>
                                     );
