@@ -1,4 +1,4 @@
-import { Calendar, Search, Plus, MapPin } from 'lucide-react';
+import { Calendar, Search, Plus, MapPin, Activity } from 'lucide-react';
 
 export default function Reservas() {
     return (
@@ -19,7 +19,29 @@ export default function Reservas() {
                 </div>
             </div>
 
-            <div className="grid">
+            <div className="dashboard-grid">
+                {[
+                    { label: 'Clases Programadas', val: '14', color: 'var(--accent-color)', icon: Calendar, bg: 'rgba(0, 113, 227, 0.05)' },
+                    { label: 'Cupos Reservados', val: '128', color: 'var(--success)', icon: Activity, bg: 'rgba(52, 199, 89, 0.05)' },
+                    { label: 'Fiestas Pendientes', val: '3', color: 'var(--brand-orange)', icon: Plus, bg: 'rgba(232, 93, 4, 0.05)' }
+                ].map((stat, i) => (
+                    <div key={i} className="stat-card glass-panel premium-stat-card" style={{
+                        gridColumn: 'span 4',
+                        padding: '24px',
+                        borderLeft: `5px solid ${stat.color}`,
+                        background: stat.bg,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+                            <stat.icon size={18} color={stat.color} />
+                        </div>
+                        <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px', lineHeight: 1 }}>{stat.val}</div>
+                    </div>
+                ))}
+
                 <div className="chart-card glass-panel" style={{ gridColumn: 'span 4' }}>
                     <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Calendar size={20} color="var(--brand-orange)" />

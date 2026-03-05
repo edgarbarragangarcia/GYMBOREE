@@ -14,16 +14,24 @@ export default function Alumnos() {
                 </button>
             </div>
 
-            <div className="grid">
+            <div className="dashboard-grid">
                 {[
-                    { label: 'Matrículas Activas', val: '438', color: 'var(--accent-color)', bg: 'rgba(0, 113, 227, 0.1)' },
-                    { label: 'Play & Learn', val: '210', color: 'var(--brand-orange)', bg: 'rgba(232, 93, 4, 0.1)' },
-                    { label: 'Pre School Steps', val: '86', color: 'var(--success)', bg: 'rgba(52, 199, 89, 0.1)' },
-                    { label: 'School Skills', val: '94', color: '#af52de', bg: 'rgba(175, 82, 222, 0.1)' }
+                    { label: 'Matrículas Activas', val: '438', color: 'var(--accent-color)', bg: 'rgba(0, 113, 227, 0.08)' },
+                    { label: 'Play & Learn', val: '210', color: 'var(--brand-orange)', bg: 'rgba(232, 93, 4, 0.08)' },
+                    { label: 'Pre School Steps', val: '86', color: 'var(--success)', bg: 'rgba(52, 199, 89, 0.08)' },
+                    { label: 'School Skills', val: '94', color: '#af52de', bg: 'rgba(175, 82, 222, 0.08)' }
                 ].map((stat, i) => (
-                    <div key={i} className="stat-card glass-panel" style={{ gridColumn: 'span 3', padding: '20px' }}>
-                        <div style={{ fontSize: '28px', fontWeight: 800, color: stat.color }}>{stat.val}</div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>{stat.label}</div>
+                    <div key={i} className="stat-card glass-panel premium-stat-card" style={{
+                        gridColumn: 'span 3',
+                        padding: '24px',
+                        background: stat.bg,
+                        borderLeft: `5px solid ${stat.color}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                    }}>
+                        <div style={{ fontSize: '32px', fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.val}</div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
                     </div>
                 ))}
 

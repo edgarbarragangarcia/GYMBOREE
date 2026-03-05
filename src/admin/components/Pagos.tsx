@@ -46,18 +46,26 @@ export default function Pagos() {
                 </div>
             </div>
 
-            <div className="grid">
+            <div className="dashboard-grid">
                 {[
-                    { label: 'Ingresos del Día', val: '$ 1,240,000', color: 'var(--success)', icon: ArrowUpRight },
-                    { label: 'Egresos del Día', val: '$ 150,000', color: 'var(--danger)', icon: ArrowDownRight },
-                    { label: 'Facturas Emitidas', val: '12', color: 'var(--accent-color)', icon: FileText }
+                    { label: 'Ingresos del Día', val: '$ 1,240,000', color: 'var(--success)', icon: ArrowUpRight, bg: 'rgba(52, 199, 89, 0.05)' },
+                    { label: 'Egresos del Día', val: '$ 150,000', color: 'var(--danger)', icon: ArrowDownRight, bg: 'rgba(255, 59, 48, 0.05)' },
+                    { label: 'Facturas Emitidas', val: '12', color: 'var(--accent-color)', icon: FileText, bg: 'rgba(0, 113, 227, 0.05)' }
                 ].map((stat, i) => (
-                    <div key={i} className="stat-card glass-panel" style={{ gridColumn: 'span 4', padding: '24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>{stat.label}</div>
-                            <stat.icon size={20} color={stat.color} />
+                    <div key={i} className="stat-card glass-panel premium-stat-card" style={{
+                        gridColumn: 'span 4',
+                        padding: '24px',
+                        borderLeft: `5px solid ${stat.color}`,
+                        background: stat.bg,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+                            <stat.icon size={18} color={stat.color} />
                         </div>
-                        <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{stat.val}</div>
+                        <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px', lineHeight: 1 }}>{stat.val}</div>
                     </div>
                 ))}
 

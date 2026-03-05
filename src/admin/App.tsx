@@ -9,14 +9,39 @@ import Almacen from './components/Almacen';
 import Configuracion from './components/Configuracion';
 import EditarSitio from './components/EditarSitio';
 import TelegramBot from './components/TelegramBot';
-import { Home, Users, Calendar, CreditCard, Box, Settings, Target, Layout, MessageSquare } from 'lucide-react';
+import { Home, Users, Calendar, CreditCard, Box, Settings, Target, Layout, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function App() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        return localStorage.getItem('gym_auth') === 'true';
+    });
+
+    const [activeTab, setActiveTab] = useState(() => {
+        return localStorage.getItem('gym_active_tab') || 'dashboard';
+    });
+
+    const handleLoginSuccess = () => {
+        setIsAuthenticated(true);
+        localStorage.setItem('gym_auth', 'true');
+    };
+
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        localStorage.setItem('gym_active_tab', tab);
+    };
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+        return localStorage.getItem('gym_sidebar_open') !== 'false';
+    });
+
+    const toggleSidebar = () => {
+        const newState = !isSidebarOpen;
+        setIsSidebarOpen(newState);
+        localStorage.setItem('gym_sidebar_open', String(newState));
+        console.log('Sidebar toggled:', newState);
+    };
 
     if (!isAuthenticated) {
-        return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
+        return <Login onLoginSuccess={handleLoginSuccess} />;
     }
 
     const renderContent = () => {
@@ -40,8 +65,8 @@ export default function App() {
             <div className="login-bg-shape bg-shape-1"></div>
             <div className="login-bg-shape bg-shape-2"></div>
 
-            <div className="app-container glass-panel" style={{ borderRadius: 0, border: 'none', position: 'relative', zIndex: 10, width: '100%', height: '100vh', display: 'flex' }}>
-                <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <div className={`app-container glass-panel ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`} style={{ borderRadius: 0, border: 'none', position: 'relative', zIndex: 10, width: '100%', height: '100vh', display: 'flex' }}>
+                <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
                 <main className="main-content">
                     {renderContent()}
                 </main>
@@ -50,53 +75,63 @@ export default function App() {
     );
 }
 
-function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: string) => void }) {
+function Sidebar({ activeTab, setActiveTab, isSidebarOpen, toggleSidebar }: {
+    activeTab: string,
+    setActiveTab: (tab: string) => void,
+    isSidebarOpen: boolean,
+    toggleSidebar: () => void
+}) {
     return (
-        <aside className="sidebar glass-panel" style={{ borderRadius: 0, borderTop: 'none', borderBottom: 'none', borderLeft: 'none' }}>
-            <div className="brand-title">
-                <Target size={28} color="var(--brand-orange)" />
-                GYMBOREE<span>.</span>
+        <aside className={`sidebar glass-panel ${!isSidebarOpen ? 'collapsed' : ''}`} style={{ borderRadius: 0, borderTop: 'none', borderBottom: 'none', borderLeft: 'none' }}>
+            <div className="sidebar-header">
+                <div className="brand-title" onClick={toggleSidebar}>
+                    <Target size={28} color="var(--brand-orange)" />
+                    {isSidebarOpen && <span>GYMBOREE<span>.</span></span>}
+                </div>
+                <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
+                    {isSidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                </button>
             </div>
 
             <div style={{ marginTop: 20 }}>
-                <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+                <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')} title={!isSidebarOpen ? 'Dashboard' : ''}>
                     <Home size={20} />
-                    <span>Dashboard</span>
+                    {isSidebarOpen && <span>Dashboard</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'walkins' ? 'active' : ''}`} onClick={() => setActiveTab('walkins')}>
+                <div className={`nav-item ${activeTab === 'walkins' ? 'active' : ''}`} onClick={() => setActiveTab('walkins')} title={!isSidebarOpen ? 'Walkins & CRM' : ''}>
                     <Target size={20} />
-                    <span>Walkins & CRM</span>
+                    {isSidebarOpen && <span>Walkins & CRM</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'alumnos' ? 'active' : ''}`} onClick={() => setActiveTab('alumnos')}>
+                <div className={`nav-item ${activeTab === 'alumnos' ? 'active' : ''}`} onClick={() => setActiveTab('alumnos')} title={!isSidebarOpen ? 'Alumnos' : ''}>
                     <Users size={20} />
-                    <span>Alumnos</span>
+                    {isSidebarOpen && <span>Alumnos</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'reservas' ? 'active' : ''}`} onClick={() => setActiveTab('reservas')}>
+                <div className={`nav-item ${activeTab === 'reservas' ? 'active' : ''}`} onClick={() => setActiveTab('reservas')} title={!isSidebarOpen ? 'Reservas & Fiestas' : ''}>
                     <Calendar size={20} />
-                    <span>Reservas & Fiestas</span>
+                    {isSidebarOpen && <span>Reservas & Fiestas</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'pagos' ? 'active' : ''}`} onClick={() => setActiveTab('pagos')}>
+                <div className={`nav-item ${activeTab === 'pagos' ? 'active' : ''}`} onClick={() => setActiveTab('pagos')} title={!isSidebarOpen ? 'Pagos & Facturación' : ''}>
                     <CreditCard size={20} />
-                    <span>Pagos & Facturación</span>
+                    {isSidebarOpen && <span>Pagos & Facturación</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'almacen' ? 'active' : ''}`} onClick={() => setActiveTab('almacen')}>
+                <div className={`nav-item ${activeTab === 'almacen' ? 'active' : ''}`} onClick={() => setActiveTab('almacen')} title={!isSidebarOpen ? 'Almacén' : ''}>
                     <Box size={20} />
-                    <span>Almacén</span>
+                    {isSidebarOpen && <span>Almacén</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'editar-sitio' ? 'active' : ''}`} onClick={() => setActiveTab('editar-sitio')}>
+                <div className={`nav-item ${activeTab === 'editar-sitio' ? 'active' : ''}`} onClick={() => setActiveTab('editar-sitio')} title={!isSidebarOpen ? 'Editar Sitio' : ''}>
                     <Layout size={20} />
-                    <span>Editar Sitio</span>
+                    {isSidebarOpen && <span>Editar Sitio</span>}
                 </div>
-                <div className={`nav-item ${activeTab === 'telegram-bot' ? 'active' : ''}`} onClick={() => setActiveTab('telegram-bot')}>
+                <div className={`nav-item ${activeTab === 'telegram-bot' ? 'active' : ''}`} onClick={() => setActiveTab('telegram-bot')} title={!isSidebarOpen ? 'Telegram Bot' : ''}>
                     <MessageSquare size={20} />
-                    <span>Telegram Bot</span>
+                    {isSidebarOpen && <span>Telegram Bot</span>}
                 </div>
             </div>
 
             <div style={{ marginTop: 'auto' }}>
-                <div className={`nav-item ${activeTab === 'configuracion' ? 'active' : ''}`} onClick={() => setActiveTab('configuracion')}>
+                <div className={`nav-item ${activeTab === 'configuracion' ? 'active' : ''}`} onClick={() => setActiveTab('configuracion')} title={!isSidebarOpen ? 'Configuración' : ''}>
                     <Settings size={20} />
-                    <span>Configuración</span>
+                    {isSidebarOpen && <span>Configuración</span>}
                 </div>
             </div>
         </aside>

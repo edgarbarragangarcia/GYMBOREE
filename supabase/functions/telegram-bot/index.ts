@@ -1,14 +1,18 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// @ts-ignore: Deno-specific import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 // Configuración del Bot
 const BOT_TOKEN = "8646314018:AAGO8K68wwC77YES_AAFy9Id0oNG4mJdImg";
+// @ts-ignore: Deno-specific
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+// @ts-ignore: Deno-specific
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-Deno.serve(async (req) => {
+// @ts-ignore: Deno-specific
+Deno.serve(async (req: Request) => {
     try {
         const update = await req.json();
         console.log("Mensaje recibido:", update);
@@ -69,7 +73,7 @@ Deno.serve(async (req) => {
         });
     } catch (error) {
         console.error("Error procesando solicitud:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Internal Server Error" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });

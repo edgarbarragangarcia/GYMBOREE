@@ -14,18 +14,26 @@ export default function Almacen() {
                 </button>
             </div>
 
-            <div className="grid">
+            <div className="dashboard-grid">
                 {[
-                    { label: 'Productos Activos', val: '142', color: 'var(--accent-color)', icon: Box },
-                    { label: 'Valor Inventario', val: '$ 4.5M', color: 'var(--success)', icon: TrendingUp },
-                    { label: 'Bajo Stock', val: '12', color: 'var(--brand-orange)', icon: AlertTriangle }
+                    { label: 'Productos Activos', val: '142', color: 'var(--accent-color)', icon: Box, bg: 'rgba(0, 113, 227, 0.05)' },
+                    { label: 'Valor Inventario', val: '$ 4.5M', color: 'var(--success)', icon: TrendingUp, bg: 'rgba(52, 199, 89, 0.05)' },
+                    { label: 'Bajo Stock', val: '12', color: 'var(--brand-orange)', icon: AlertTriangle, bg: 'rgba(232, 93, 4, 0.05)' }
                 ].map((stat, i) => (
-                    <div key={i} className="stat-card glass-panel" style={{ gridColumn: 'span 4', padding: '24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>{stat.label}</div>
-                            <stat.icon size={20} color={stat.color} />
+                    <div key={i} className="stat-card glass-panel premium-stat-card" style={{
+                        gridColumn: 'span 4',
+                        padding: '24px',
+                        borderLeft: `5px solid ${stat.color}`,
+                        background: stat.bg,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+                            <stat.icon size={18} color={stat.color} />
                         </div>
-                        <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{stat.val}</div>
+                        <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px', lineHeight: 1 }}>{stat.val}</div>
                     </div>
                 ))}
 

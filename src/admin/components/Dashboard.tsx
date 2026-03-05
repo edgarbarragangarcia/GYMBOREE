@@ -16,7 +16,7 @@ export default function Dashboard() {
 
             <div className="dashboard-grid">
                 {/* KPI Cards */}
-                <div className="stat-card glass-panel">
+                <div className="stat-card glass-panel" style={{ borderLeft: '5px solid var(--accent-color)', background: 'rgba(0, 113, 227, 0.05)' }}>
                     <div className="stat-icon icon-blue">
                         <Users size={20} />
                     </div>
@@ -24,7 +24,7 @@ export default function Dashboard() {
                     <div className="stat-label">Alumnos Activos</div>
                 </div>
 
-                <div className="stat-card glass-panel">
+                <div className="stat-card glass-panel" style={{ borderLeft: '5px solid var(--brand-orange)', background: 'rgba(232, 93, 4, 0.05)' }}>
                     <div className="stat-icon icon-orange">
                         <UserPlus size={20} />
                     </div>
@@ -32,7 +32,7 @@ export default function Dashboard() {
                     <div className="stat-label">Walkings por gestionar</div>
                 </div>
 
-                <div className="stat-card glass-panel">
+                <div className="stat-card glass-panel" style={{ borderLeft: '5px solid var(--success)', background: 'rgba(52, 199, 89, 0.05)' }}>
                     <div className="stat-icon icon-green">
                         <CreditCard size={20} />
                     </div>
@@ -40,7 +40,7 @@ export default function Dashboard() {
                     <div className="stat-label">Ingresos de Hoy</div>
                 </div>
 
-                <div className="stat-card glass-panel">
+                <div className="stat-card glass-panel" style={{ borderLeft: '5px solid #af52de', background: 'rgba(175, 82, 222, 0.05)' }}>
                     <div className="stat-icon icon-purple">
                         <Activity size={20} />
                     </div>
