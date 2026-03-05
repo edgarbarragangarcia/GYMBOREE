@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, CheckCircle2, X, FileText } from 'lucide-react';
+import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, X, FileText } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // Cliente apuntando al proyecto HUNTER (no toca la DB de APEG/Gymboree)
@@ -37,7 +37,6 @@ export default function TelegramBot() {
     const [childSearch, setChildSearch] = useState('');
     const [foundChild, setFoundChild] = useState<any>(null);
     const [isScheduling, setIsScheduling] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
     const [appointmentDate, setAppointmentDate] = useState('');
     const [appointmentTime, setAppointmentTime] = useState('');
     const [appointmentProgram, setAppointmentProgram] = useState('');

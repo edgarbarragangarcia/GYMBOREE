@@ -28,7 +28,16 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
 export default function Dashboard() {
     return (
         <div style={{ padding: '0 8px' }}>
-            <header className="page-header" style={{ marginBottom: '32px' }}>
+            <header className="page-header" style={{
+                marginBottom: '32px',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                background: 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(20px)',
+                padding: '24px 8px',
+                margin: '0 -8px 32px'
+            }}>
                 <div>
                     <h1 className="page-title" style={{ fontSize: '30px', fontWeight: 900, letterSpacing: '-1px' }}>Intelligence Hub</h1>
                     <p className="page-subtitle">Análisis de Desempeño & Métricas Financieras</p>
