@@ -9,7 +9,7 @@ export default function WalkinsCRM() {
     const [nextTaskDesc, setNextTaskDesc] = useState('');
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ padding: '0 8px' }}>
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -20,8 +20,8 @@ export default function WalkinsCRM() {
                 zIndex: 100,
                 background: 'rgba(255, 255, 255, 0.8)',
                 backdropFilter: 'blur(20px)',
-                padding: '24px 0',
-                margin: '-24px 0 32px'
+                padding: '24px 8px',
+                margin: '0 -8px 32px'
             }}>
                 <div>
                     <h1 style={{ fontSize: '32px', fontWeight: 900, margin: 0, letterSpacing: '-1px' }}>Walkins & CRM</h1>
