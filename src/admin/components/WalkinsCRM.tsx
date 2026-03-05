@@ -251,14 +251,14 @@ export default function WalkinsCRM() {
     };
 
     // Academic Tab State
-    const [childSearch, setChildSearch] = useState('');
+    const [childSearch, _setChildSearch] = useState('');
     const [foundChild, setFoundChild] = useState<any>(null);
-    const [isScheduling, setIsScheduling] = useState(false);
+    const [_isScheduling, setIsScheduling] = useState(false);
     const [appointmentDate, setAppointmentDate] = useState('');
     const [appointmentTime, setAppointmentTime] = useState('');
     const [appointmentProgram, setAppointmentProgram] = useState('');
 
-    const handleChildSearch = (e: React.FormEvent) => {
+    const _handleChildSearch = (e: React.FormEvent) => {
         e.preventDefault();
         const query = childSearch.toLowerCase();
         if (query.includes('agustin') || query.includes('barragan')) {
@@ -289,7 +289,7 @@ export default function WalkinsCRM() {
         }
     };
 
-    const handleSaveAppointment = (e: React.FormEvent) => {
+    const _handleSaveAppointment = (e: React.FormEvent) => {
         e.preventDefault();
         alert(`Cita programada para ${foundChild.name} en ${appointmentProgram} el día ${appointmentDate} a las ${appointmentTime}`);
         setIsScheduling(false);
