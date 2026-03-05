@@ -1,4 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+const STYLES = `
+  @keyframes pulse-green-border {
+    0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+  }
+`;
 import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, X, FileText, Target, Save, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -238,6 +245,21 @@ export default function TelegramBot() {
         }
     };
 
+    const checkAndSetInterest = async (chatId: number, text: string) => {
+        const lowerText = text.toLowerCase();
+        if (lowerText.includes('agendar') || lowerText.includes('cita') || lowerText.includes('programar')) {
+            await hunter.from('tg_chats').update({ ai_paused: true }).eq('id', chatId);
+            fetchChats();
+        }
+    };
+
+    useEffect(() => {
+        const styleTag = document.createElement('style');
+        styleTag.innerHTML = STYLES;
+        document.head.appendChild(styleTag);
+        return () => { document.head.removeChild(styleTag); };
+    }, []);
+
     useEffect(() => {
         fetchChats();
 
@@ -246,6 +268,12 @@ export default function TelegramBot() {
             .channel('gymboree_telegram')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tg_messages' }, (payload) => {
                 const newMsg = payload.new as Message;
+
+                // Si el mensaje es del usuario, revisar interés
+                if (!newMsg.from_bot) {
+                    checkAndSetInterest(newMsg.chat_id, newMsg.text);
+                }
+
                 if (selectedChatRef.current && newMsg.chat_id === selectedChatRef.current.id) {
                     setMessages(prev => {
                         if (prev.find(m => m.id === newMsg.id)) return prev;
@@ -371,15 +399,22 @@ export default function TelegramBot() {
                                     style={{
                                         padding: '14px 18px',
                                         cursor: 'pointer',
-                                        transition: 'background 0.2s',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                         borderBottom: '1px solid rgba(0,0,0,0.05)',
+                                        position: 'relative',
                                         background: chat.ai_paused
-                                            ? (selectedChat?.id === chat.id ? 'rgba(52, 199, 89, 0.2)' : 'rgba(52, 199, 89, 0.05)')
-                                            : (selectedChat?.id === chat.id ? 'var(--brand-orange-light)' : 'transparent')
+                                            ? (selectedChat?.id === chat.id ? 'rgba(52, 199, 89, 0.25)' : 'rgba(52, 199, 89, 0.12)')
+                                            : (selectedChat?.id === chat.id ? 'var(--brand-orange-light)' : 'transparent'),
+                                        animation: chat.ai_paused ? 'pulse-green-border 2s infinite' : 'none'
                                     }}
-                                    onMouseEnter={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = chat.ai_paused ? 'rgba(52, 199, 89, 0.1)' : 'rgba(0,0,0,0.02)'; }}
-                                    onMouseLeave={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = chat.ai_paused ? 'rgba(52, 199, 89, 0.05)' : 'transparent'; }}
+                                    onMouseEnter={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = chat.ai_paused ? 'rgba(52, 199, 89, 0.2)' : 'rgba(0,0,0,0.02)'; }}
+                                    onMouseLeave={e => { if (selectedChat?.id !== chat.id) (e.currentTarget as HTMLElement).style.background = chat.ai_paused ? 'rgba(52, 199, 89, 0.12)' : 'transparent'; }}
                                 >
+                                    {chat.ai_paused && (
+                                        <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--success)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: '0 2px 4px rgba(52,199,89,0.3)', zIndex: 1 }}>
+                                            <Calendar size={10} /> Interés en Cita
+                                        </div>
+                                    )}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ width: '42px', height: '42px', borderRadius: '21px', background: 'linear-gradient(135deg, #0088cc, #0055aa)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,136,204,0.2)' }}>
                                             <User size={18} color="white" />

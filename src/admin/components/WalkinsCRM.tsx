@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Filter, PhoneCall, FileText, X, Save, Calendar, User, Baby, Hash, Edit2, Clock, Activity, Mail, Phone, ExternalLink, CheckCircle, Circle } from 'lucide-react';
+import { Search, Plus, Filter, PhoneCall, FileText, X, Save, User, Clock, Activity, Phone, LayoutGrid, List, CheckCircle, Circle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // Cliente apuntando al proyecto HUNTER
@@ -25,6 +25,15 @@ export default function WalkinsCRM() {
     const [isSavingActivity, setIsSavingActivity] = useState(false);
     const [leadActivities, setLeadActivities] = useState<any[]>([]);
     const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 7;
+
+    const KANBAN_STATUSES = ['Nuevo', 'Contactado', 'En Seguimiento', 'Clase Demo Programada', 'Demo Asistida', 'Matriculado', 'Perdido / No Interesado'];
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, viewMode]);
 
     const filteredLeads = leads.filter(lead => {
         const search = searchTerm.toLowerCase();
@@ -35,6 +44,9 @@ export default function WalkinsCRM() {
             (lead.telegram_username?.toLowerCase().includes(search))
         );
     });
+
+    const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
+    const paginatedLeads = filteredLeads.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const counts = {
         total: leads.length,
@@ -298,7 +310,7 @@ export default function WalkinsCRM() {
                             transition: 'all 0.2s'
                         }}
                     >
-                        Información Académica
+                        Listado de Prospectos
                     </button>
                 </div>
             </div>
@@ -382,249 +394,207 @@ export default function WalkinsCRM() {
                     </div>
 
                     <div className="grid">
-                        <div className="chart-card glass-panel" style={{ gridColumn: 'span 12' }}>
-                            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-                                <div className="input-wrapper" style={{ flex: 1 }}>
-                                    <Search size={18} className="input-icon" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        placeholder="Buscar prospectos por nombre, teléfono o email..."
-                                        className="premium-input"
-                                        style={{ height: '44px', borderRadius: '12px' }}
-                                    />
-                                </div>
-                                <button className="glass-panel" style={{ padding: '0 20px', border: '1px solid var(--surface-border)', borderRadius: '12px', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                                    <Filter size={18} />
-                                    Filtros
-                                </button>
+                        <div className="chart-card glass-panel" style={{ gridColumn: 'span 12', minHeight: 'auto' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                                <Activity size={20} color="var(--danger)" />
+                                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--danger)' }}>Alertas: Leads sin atención</h3>
                             </div>
-
-                            <div style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '2px solid var(--surface-border)', color: 'var(--text-secondary)', fontSize: '13px' }}>
-                                            <th style={{ padding: '16px 8px' }}>Prospecto</th>
-                                            <th style={{ padding: '16px 8px' }}>Contacto</th>
-                                            <th style={{ padding: '16px 8px' }}>Día de Registro</th>
-                                            <th style={{ padding: '16px 8px' }}>Día de Contacto</th>
-                                            <th style={{ padding: '16px 8px', textAlign: 'center' }}>Días sin Actividad</th>
-                                            <th style={{ padding: '16px 8px' }}>Canal / Origen</th>
-                                            <th style={{ padding: '16px 8px' }}>Programa Interés</th>
-                                            <th style={{ padding: '16px 8px' }}>Estado</th>
-                                            <th style={{ padding: '16px 8px' }}>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {loadingLeads ? (
-                                            <tr>
-                                                <td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                                    <Clock size={24} style={{ animation: 'spin 2s linear infinite', marginBottom: '12px' }} />
-                                                    <div>Cargando prospectos...</div>
-                                                </td>
-                                            </tr>
-                                        ) : filteredLeads.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                                    No se encontraron prospectos con "{searchTerm}".
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            filteredLeads.map((lead) => {
-                                                const diasInactivo = calculateDaysInactive(lead.updated_at);
-                                                return (
-                                                    <tr key={lead.id} style={{ borderBottom: '1px solid var(--surface-border)', transition: 'background 0.2s' }}>
-                                                        <td style={{ padding: '16px 8px' }}>
-                                                            <div style={{ fontWeight: 600 }}>{lead.family_name || 'Sin Apellido'}</div>
-                                                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                                                Niño: {lead.child_name || '---'} ({lead.child_age || '---'})
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ padding: '16px 8px', fontSize: '14px' }}>{lead.phone || lead.telegram_username || '---'}</td>
-                                                        <td style={{ padding: '16px 8px', fontSize: '14px', color: 'var(--text-secondary)' }}>{formatDate(lead.created_at)}</td>
-                                                        <td style={{ padding: '16px 8px', fontSize: '14px', color: 'var(--text-secondary)' }}>{formatDate(lead.updated_at)}, {formatTime(lead.updated_at)}</td>
-                                                        <td style={{ padding: '16px 8px', fontSize: '14px', color: diasInactivo > 3 ? 'var(--danger)' : diasInactivo > 0 ? 'var(--warning)' : 'var(--success)', fontWeight: 600, textAlign: 'center' }}>
-                                                            {diasInactivo} {diasInactivo === 1 ? 'día' : 'días'}
-                                                        </td>
-                                                        <td style={{ padding: '16px 8px', fontSize: '13px' }}>{lead.source}</td>
-                                                        <td style={{ padding: '16px 8px', fontSize: '14px', fontWeight: 500 }}>{lead.program_interest || '---'}</td>
-                                                        <td style={{ padding: '16px 8px' }}>
-                                                            <span style={{
-                                                                padding: '4px 10px',
-                                                                background: lead.status === 'Nuevo' ? 'rgba(0, 113, 227, 0.1)' : lead.status === 'Clase Demo Programada' ? 'rgba(52, 199, 89, 0.1)' : 'rgba(232, 93, 4, 0.1)',
-                                                                color: lead.status === 'Nuevo' ? 'var(--accent-color)' : lead.status === 'Clase Demo Programada' ? 'var(--success)' : 'var(--brand-orange)',
-                                                                borderRadius: '20px',
-                                                                fontSize: '12px',
-                                                                fontWeight: 600
-                                                            }}>
-                                                                {lead.status}
-                                                            </span>
-                                                        </td>
-                                                        <td style={{ padding: '16px 8px' }}>
-                                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                                <button onClick={() => setViewProfileLead(lead)} style={{ background: 'rgba(142, 142, 147, 0.1)', color: 'var(--text-secondary)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Ver Perfil"><User size={16} /></button>
-                                                                <button onClick={() => handleOpenActivityModal(lead)} style={{ background: 'rgba(255, 149, 0, 0.1)', color: 'var(--brand-orange)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Registrar Actividad"><FileText size={16} /></button>
-                                                                <button style={{ background: 'rgba(0, 113, 227, 0.1)', color: 'var(--accent-color)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Llamar"><PhoneCall size={16} /></button>
-                                                                <button onClick={() => setIsDeleting(lead.id)} style={{ background: 'rgba(255, 59, 48, 0.1)', color: 'var(--danger)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Borrar Prospecto"><X size={16} /></button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {leads.filter(l => calculateDaysInactive(l.updated_at) > 1).length === 0 ? (
+                                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay prospectos desatendidos. ¡Buen trabajo!</div>
+                                ) : (
+                                    leads.filter(l => calculateDaysInactive(l.updated_at) > 1).map(lead => (
+                                        <div key={lead.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,59,48,0.05)', border: '1px solid rgba(255,59,48,0.1)', borderRadius: '12px', transition: 'all 0.2s' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '15px' }}>{lead.family_name || 'Sin Apellido'}</div>
+                                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>{lead.phone || 'Sin teléfono'} • Último contacto hace <strong style={{ color: 'var(--danger)' }}>{calculateDaysInactive(lead.updated_at)} días</strong></div>
+                                            </div>
+                                            <button onClick={() => handleOpenActivityModal(lead)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '13px', background: 'var(--danger)', border: 'none', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Atender ahora</button>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
                 </>
             ) : (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0 40px' }}>
-                    <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', borderRadius: '24px', overflow: 'hidden', minHeight: '600px' }}>
-                        <div style={{ padding: '32px', borderBottom: '1px solid rgba(0,0,0,0.05)', background: 'rgba(255,255,255,0.2)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                                <div style={{ background: 'var(--brand-orange-light)', padding: '10px', borderRadius: '14px' }}>
-                                    <Baby size={24} color="var(--brand-orange)" />
-                                </div>
-                                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Información Académica</h2>
-                            </div>
-                            <form onSubmit={handleChildSearch} style={{ background: 'white', borderRadius: '16px', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
-                                <Search size={20} color="var(--text-secondary)" />
+                <div className="grid">
+                    <div className="chart-card glass-panel" style={{ gridColumn: 'span 12' }}>
+                        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                            <div className="input-wrapper" style={{ flex: 1 }}>
+                                <Search size={18} className="input-icon" style={{ left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
                                 <input
                                     type="text"
-                                    value={childSearch}
-                                    onChange={e => setChildSearch(e.target.value)}
-                                    placeholder="Buscar niño (Ej. Agustin)..."
-                                    style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '15px', width: '100%', outline: 'none', fontWeight: 500 }}
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    placeholder="Buscar prospectos por nombre, teléfono o email..."
+                                    className="premium-input"
+                                    style={{ height: '44px', borderRadius: '12px' }}
                                 />
-                            </form>
-                        </div>
-
-                        <div style={{ flex: 1, padding: '32px' }}>
-                            {foundChild ? (
-                                isScheduling ? (
-                                    <div style={{ animation: 'fadeIn 0.3s ease' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-                                            <button onClick={() => setIsScheduling(false)} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
-                                            <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Programar Cita</h3>
-                                        </div>
-                                        <form onSubmit={handleSaveAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>Programa / Servicio</label>
-                                                <select
-                                                    required
-                                                    value={appointmentProgram}
-                                                    onChange={e => setAppointmentProgram(e.target.value)}
-                                                    style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '14px' }}
-                                                >
-                                                    <option value="">Seleccionar programa...</option>
-                                                    <option value="Clase Demo Play & Learn">Clase Demo Play & Learn</option>
-                                                    <option value="Clase Demo Gym Music">Clase Demo Gym Music</option>
-                                                    <option value="Reposición">Reposición</option>
-                                                </select>
-                                            </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>Fecha</label>
-                                                    <input type="date" required value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '14px' }} />
-                                                </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>Hora</label>
-                                                    <input type="time" required value={appointmentTime} onChange={e => setAppointmentTime(e.target.value)} style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', fontSize: '14px' }} />
-                                                </div>
-                                            </div>
-                                            <button className="btn-primary" type="submit" style={{ padding: '16px', marginTop: '10px', borderRadius: '14px', fontSize: '15px' }}>Confirmar Cita</button>
-                                        </form>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                                        <div style={{ textAlign: 'center' }}>
-                                            <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 20px', borderRadius: '60px', overflow: 'hidden', border: '4px solid white', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
-                                                <img src={foundChild.photo} alt={foundChild.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                <div style={{ position: 'absolute', bottom: 4, right: 4, width: '32px', height: '32px', borderRadius: '16px', background: 'var(--brand-orange)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-                                                    <Edit2 size={16} color="white" />
-                                                </div>
-                                            </div>
-                                            <h3 style={{ fontSize: '24px', fontWeight: 900, margin: '0 0 8px', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{foundChild.name}</h3>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                                                <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>{foundChild.age}</span>
-                                                <span style={{ padding: '4px 12px', borderRadius: '12px', background: 'rgba(52, 199, 89, 0.1)', color: 'var(--success)', fontSize: '12px', fontWeight: 800 }}>{foundChild.status}</span>
-                                            </div>
-                                        </div>
-
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                            <button
-                                                onClick={() => setIsScheduling(true)}
-                                                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '20px', borderRadius: '20px', background: 'rgba(0,113,227,0.04)', border: '1px solid rgba(0,113,227,0.08)', cursor: 'pointer', transition: 'transform 0.2s, background 0.2s' }}
-                                            >
-                                                <Clock size={24} color="var(--accent-color)" />
-                                                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-color)' }}>Programar Cita</span>
-                                            </button>
-                                            <button style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '20px', borderRadius: '20px', background: 'rgba(232, 93, 4, 0.04)', border: '1px solid rgba(232, 93, 4, 0.08)', cursor: 'pointer', transition: 'transform 0.2s, background 0.2s' }}>
-                                                <FileText size={24} color="var(--brand-orange)" />
-                                                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-orange)' }}>Pagos / RC</span>
-                                            </button>
-                                        </div>
-
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                            <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Programas Activos</label>
-                                            {foundChild.programs.map((p: any, idx: number) => (
-                                                <div key={idx} style={{ padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                                        <span style={{ fontWeight: 800, fontSize: '15px' }}>{p.name} <span style={{ color: 'var(--brand-orange)', marginLeft: '4px' }}>{p.level}</span></span>
-                                                        <Activity size={16} color="var(--text-secondary)" />
-                                                    </div>
-                                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                                                        <Calendar size={14} /> {p.schedule}
-                                                    </div>
-                                                    <div style={{ width: '100%', height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                        <div style={{ width: `${p.progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--brand-orange), #ff8a00)', borderRadius: '3px' }} />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                            <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Responsable / Acudiente</label>
-                                            <div style={{ padding: '20px', borderRadius: '18px', background: 'var(--brand-orange-light)', border: '1px solid rgba(232, 93, 4, 0.1)' }}>
-                                                <div style={{ fontWeight: 800, fontSize: '16px', marginBottom: '12px', color: 'var(--brand-orange)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <span>{foundChild.parent.name}</span>
-                                                    <span style={{ fontSize: '11px', padding: '4px 8px', background: 'white', borderRadius: '8px', fontWeight: 700 }}>{foundChild.parent.relation}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-                                                    <a href={`tel:${foundChild.parent.phone}`} style={{ fontSize: '14px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}><Phone size={14} /> {foundChild.parent.phone}</a>
-                                                    <a href={`mailto:${foundChild.parent.email}`} style={{ fontSize: '14px', color: 'var(--text-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}><Mail size={14} /> {foundChild.parent.email}</a>
-                                                </div>
-                                                <button style={{ width: '100%', background: 'white', border: '1px solid rgba(232, 93, 4, 0.2)', borderRadius: '12px', padding: '12px', fontSize: '13px', color: 'var(--brand-orange)', fontWeight: 800, cursor: 'pointer' }}>Generar Link de Pago (PSE)</button>
-                                            </div>
-                                        </div>
-
-                                        <button className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: '14px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                            Ver Perfil en HUNTER
-                                            <ExternalLink size={16} />
-                                        </button>
-                                    </div>
-                                )
-                            ) : (
-                                <div style={{ textAlign: 'center', marginTop: '60px', color: 'var(--text-secondary)' }}>
-                                    <div style={{ width: '100%', padding: '48px 32px', borderRadius: '24px', background: 'rgba(0,0,0,0.02)', border: '2px dashed rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                                        <div style={{ background: 'white', padding: '16px', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                                            <Search size={40} style={{ opacity: 0.3 }} />
-                                        </div>
-                                        <p style={{ fontSize: '15px', margin: 0, maxWidth: '280px', lineHeight: 1.6, fontWeight: 500 }}>Busca un niño por nombre para ver su ficha técnica.</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div style={{ padding: '20px 32px', borderTop: '1px solid rgba(0,0,0,0.05)', background: 'rgba(0,0,0,0.01)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                <Hash size={14} />
-                                <span>ID: {foundChild?.id || '---'}</span>
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.6 }}>GYMBOREE Intelligence Hub</div>
+                            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.03)', borderRadius: '12px', padding: '4px' }}>
+                                <button onClick={() => setViewMode('list')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: viewMode === 'list' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                                    <List size={16} /> Lista
+                                </button>
+                                <button onClick={() => setViewMode('kanban')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', color: viewMode === 'kanban' ? 'var(--text-primary)' : 'var(--text-secondary)', boxShadow: viewMode === 'kanban' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                                    <LayoutGrid size={16} /> Kanban
+                                </button>
+                            </div>
+                            <button className="glass-panel" style={{ padding: '0 20px', border: '1px solid var(--surface-border)', borderRadius: '12px', background: 'transparent', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                                <Filter size={18} />
+                                Filtros
+                            </button>
                         </div>
+
+                        {viewMode === 'list' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '520px' }}>
+                                <div style={{ overflowX: 'auto', flex: 1 }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '2px solid var(--surface-border)', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                                                <th style={{ padding: '16px 8px' }}>Prospecto</th>
+                                                <th style={{ padding: '16px 8px' }}>Contacto</th>
+                                                <th style={{ padding: '16px 8px' }}>Día de Registro</th>
+                                                <th style={{ padding: '16px 8px' }}>Día de Contacto</th>
+                                                <th style={{ padding: '16px 8px', textAlign: 'center' }}>Días sin Actividad</th>
+                                                <th style={{ padding: '16px 8px' }}>Canal / Origen</th>
+                                                <th style={{ padding: '16px 8px' }}>Programa Interés</th>
+                                                <th style={{ padding: '16px 8px' }}>Estado</th>
+                                                <th style={{ padding: '16px 8px' }}>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {loadingLeads ? (
+                                                <tr>
+                                                    <td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                                        <Clock size={24} style={{ animation: 'spin 2s linear infinite', marginBottom: '12px' }} />
+                                                        <div>Cargando prospectos...</div>
+                                                    </td>
+                                                </tr>
+                                            ) : filteredLeads.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                                        No se encontraron prospectos con "{searchTerm}".
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                paginatedLeads.map((lead) => {
+                                                    const diasInactivo = calculateDaysInactive(lead.updated_at);
+                                                    return (
+                                                        <tr key={lead.id} style={{ borderBottom: '1px solid var(--surface-border)', transition: 'background 0.2s' }}>
+                                                            <td style={{ padding: '16px 8px' }}>
+                                                                <div style={{ fontWeight: 600 }}>{lead.family_name || 'Sin Apellido'}</div>
+                                                                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                                    Niño: {lead.child_name || '---'} ({lead.child_age || '---'})
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '16px 8px', fontSize: '14px' }}>{lead.phone || lead.telegram_username || '---'}</td>
+                                                            <td style={{ padding: '16px 8px', fontSize: '14px', color: 'var(--text-secondary)' }}>{formatDate(lead.created_at)}</td>
+                                                            <td style={{ padding: '16px 8px', fontSize: '14px', color: 'var(--text-secondary)' }}>{formatDate(lead.updated_at)}, {formatTime(lead.updated_at)}</td>
+                                                            <td style={{ padding: '16px 8px', fontSize: '14px', color: diasInactivo > 3 ? 'var(--danger)' : diasInactivo > 0 ? 'var(--warning)' : 'var(--success)', fontWeight: 600, textAlign: 'center' }}>
+                                                                {diasInactivo} {diasInactivo === 1 ? 'día' : 'días'}
+                                                            </td>
+                                                            <td style={{ padding: '16px 8px', fontSize: '13px' }}>{lead.source}</td>
+                                                            <td style={{ padding: '16px 8px', fontSize: '14px', fontWeight: 500 }}>{lead.program_interest || '---'}</td>
+                                                            <td style={{ padding: '16px 8px' }}>
+                                                                <span style={{
+                                                                    padding: '4px 10px',
+                                                                    background: lead.status === 'Nuevo' ? 'rgba(0, 113, 227, 0.1)' : lead.status === 'Clase Demo Programada' ? 'rgba(52, 199, 89, 0.1)' : 'rgba(232, 93, 4, 0.1)',
+                                                                    color: lead.status === 'Nuevo' ? 'var(--accent-color)' : lead.status === 'Clase Demo Programada' ? 'var(--success)' : 'var(--brand-orange)',
+                                                                    borderRadius: '20px',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: 600
+                                                                }}>
+                                                                    {lead.status}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '16px 8px' }}>
+                                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                                    <button onClick={() => setViewProfileLead(lead)} style={{ background: 'rgba(142, 142, 147, 0.1)', color: 'var(--text-secondary)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Ver Perfil"><User size={16} /></button>
+                                                                    <button onClick={() => handleOpenActivityModal(lead)} style={{ background: 'rgba(255, 149, 0, 0.1)', color: 'var(--brand-orange)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Registrar Actividad"><FileText size={16} /></button>
+                                                                    <button style={{ background: 'rgba(0, 113, 227, 0.1)', color: 'var(--accent-color)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Llamar"><PhoneCall size={16} /></button>
+                                                                    <button onClick={() => setIsDeleting(lead.id)} style={{ background: 'rgba(255, 59, 48, 0.1)', color: 'var(--danger)', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }} title="Borrar Prospecto"><X size={16} /></button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '24px', minHeight: '520px' }}>
+                                {KANBAN_STATUSES.map(status => {
+                                    const statusLeads = paginatedLeads.filter(l => l.status === status);
+                                    let columnColor = 'var(--text-secondary)';
+                                    let columnBg = 'rgba(0,0,0,0.02)';
+
+                                    if (status === 'Nuevo') { columnColor = 'var(--accent-color)'; columnBg = 'rgba(0, 113, 227, 0.03)'; }
+                                    if (status === 'Clase Demo Programada') { columnColor = 'var(--success)'; columnBg = 'rgba(52, 199, 89, 0.03)'; }
+                                    if (status === 'En Seguimiento' || status === 'Contactado') { columnColor = 'var(--brand-orange)'; columnBg = 'rgba(232, 93, 4, 0.03)'; }
+
+                                    return (
+                                        <div key={status} style={{ minWidth: '320px', background: columnBg, borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: columnColor }}>{status}</h4>
+                                                <span style={{ padding: '2px 10px', background: 'white', borderRadius: '12px', fontSize: '12px', fontWeight: 700, color: columnColor, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>{statusLeads.length}</span>
+                                            </div>
+
+                                            {statusLeads.map(lead => {
+                                                const diasInactivo = calculateDaysInactive(lead.updated_at);
+                                                return (
+                                                    <div key={lead.id} style={{ background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', cursor: 'grab', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid rgba(0,0,0,0.05)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                            <div>
+                                                                <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>{lead.family_name || 'Sin Apellido'}</div>
+                                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Niño: <strong style={{ color: 'var(--text-primary)' }}>{lead.child_name || '---'} ({lead.child_age || '---'})</strong></div>
+                                                            </div>
+                                                            {diasInactivo > 0 && (
+                                                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '8px', background: diasInactivo > 3 ? 'rgba(255, 59, 48, 0.1)' : 'rgba(255, 149, 0, 0.1)', color: diasInactivo > 3 ? 'var(--danger)' : 'var(--warning)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    <Clock size={12} /> {diasInactivo}d
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={14} /> {lead.phone || lead.telegram_username || '---'}</div>
+                                                        <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '12px', display: 'flex', gap: '8px' }}>
+                                                            <button onClick={() => setViewProfileLead(lead)} style={{ background: 'rgba(142, 142, 147, 0.06)', color: 'var(--text-secondary)', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', flex: 1, display: 'flex', justifyContent: 'center', transition: 'background 0.2s' }} title="Ver Perfil"><User size={16} /></button>
+                                                            <button onClick={() => handleOpenActivityModal(lead)} style={{ background: 'var(--brand-orange)', color: 'white', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', flex: 1, display: 'flex', justifyContent: 'center', fontWeight: 700, transition: 'background 0.2s' }} title="Gestionar"><FileText size={16} /></button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {statusLeads.length === 0 && (
+                                                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic', opacity: 0.6 }}>No hay prospectos aquí</div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {totalPages > 1 && (
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px', borderTop: '1px solid var(--surface-border)', background: 'rgba(255,255,255,0.5)', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: currentPage === 1 ? 'transparent' : 'white', cursor: currentPage === 1 ? 'default' : 'pointer', fontWeight: 600, color: currentPage === 1 ? 'var(--text-secondary)' : 'var(--text-primary)', opacity: currentPage === 1 ? 0.3 : 1 }}
+                                >
+                                    Anterior
+                                </button>
+                                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.04)', padding: '6px 12px', borderRadius: '8px' }}>
+                                    Página {currentPage} de {totalPages}
+                                </div>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: currentPage === totalPages ? 'transparent' : 'white', cursor: currentPage === totalPages ? 'default' : 'pointer', fontWeight: 600, color: currentPage === totalPages ? 'var(--text-secondary)' : 'var(--text-primary)', opacity: currentPage === totalPages ? 0.3 : 1 }}
+                                >
+                                    Siguiente
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
