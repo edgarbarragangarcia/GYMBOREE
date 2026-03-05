@@ -250,53 +250,7 @@ export default function WalkinsCRM() {
         return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
     };
 
-    // Academic Tab State
-    const [childSearch, _setChildSearch] = useState('');
-    const [foundChild, setFoundChild] = useState<any>(null);
-    const [_isScheduling, setIsScheduling] = useState(false);
-    const [appointmentDate, setAppointmentDate] = useState('');
-    const [appointmentTime, setAppointmentTime] = useState('');
-    const [appointmentProgram, setAppointmentProgram] = useState('');
-
-    const _handleChildSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        const query = childSearch.toLowerCase();
-        if (query.includes('agustin') || query.includes('barragan')) {
-            setFoundChild({
-                id: 'GB-2024-089',
-                name: 'Agustín Barragán',
-                age: '3 años 4 meses',
-                photo: 'https://images.unsplash.com/photo-1519238263530-99bbe18754b9?auto=format&fit=crop&q=80&w=200',
-                status: 'Activo',
-                programs: [
-                    { name: 'Play & Learn', level: 'L3', schedule: 'Lun - Mié 4:00 PM', progress: 85 },
-                    { name: 'Gym Music', level: 'L1', schedule: 'Vie 3:00 PM', progress: 40 }
-                ],
-                attendance: '95%',
-                lastPayment: '01 Mar 2026',
-                parent: {
-                    name: 'Edgar Barragán',
-                    phone: '+57 300 123 4567',
-                    email: 'edgar@example.com',
-                    relation: 'Padre'
-                },
-                alerts: ['Alergia al maní', 'Recoger puntualmente'],
-                nextClass: 'Hoy, 4:00 PM (L3)',
-                vencimiento: '30 Mar 2026'
-            });
-        } else {
-            setFoundChild(null);
-        }
-    };
-
-    const _handleSaveAppointment = (e: React.FormEvent) => {
-        e.preventDefault();
-        alert(`Cita programada para ${foundChild.name} en ${appointmentProgram} el día ${appointmentDate} a las ${appointmentTime}`);
-        setIsScheduling(false);
-        setAppointmentDate('');
-        setAppointmentTime('');
-        setAppointmentProgram('');
-    };
+    // Academic Tab State (reservado para futura implementación)
 
     return (
         <div style={{ padding: '0 8px' }}>
