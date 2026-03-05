@@ -176,19 +176,7 @@ export default function TelegramBot() {
             padding: '0 48px'
         }}>
             {/* Sticky Page Header */}
-            <div style={{
-                flexShrink: 0,
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                background: 'rgba(255, 255, 255, 0.85)',
-                backdropFilter: 'blur(20px)',
-                padding: '24px 0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid rgba(0,0,0,0.04)'
-            }}>
+            <div className="sticky-page-header" style={{ flexShrink: 0, position: 'sticky', top: 0 }}>
                 <div>
                     <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Intelligence Hub · Bot IA</h1>
                     <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Monitorea y responde conversaciones de Telegram asistido por Gemini AI.</p>

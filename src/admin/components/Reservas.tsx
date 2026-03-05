@@ -3,19 +3,7 @@ import { Calendar, Search, Plus, MapPin, Activity } from 'lucide-react';
 export default function Reservas() {
     return (
         <div style={{ padding: '0 8px' }}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '32px',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(20px)',
-                padding: '24px 8px',
-                margin: '0 -8px 32px'
-            }}>
+            <div className="sticky-page-header">
                 <div>
                     <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Reservas & Fiestas</h1>
                     <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de aforo, control de asistencia y eventos especiales.</p>

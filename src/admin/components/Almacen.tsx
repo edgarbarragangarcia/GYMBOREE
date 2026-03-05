@@ -3,18 +3,7 @@ import { Box, Search, Plus, Tag, TrendingUp, AlertTriangle } from 'lucide-react'
 export default function Almacen() {
     return (
         <div style={{ padding: '0 8px' }}>
-            <div style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(20px)',
-                padding: '24px 8px',
-                margin: '0 -8px 32px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
+            <div className="sticky-page-header">
                 <div>
                     <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Almacén & Merchandising</h1>
                     <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Control de inventario físico, ventas de tienda e ingresos adicionales.</p>

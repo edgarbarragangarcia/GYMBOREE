@@ -7,19 +7,7 @@ interface ConfiguracionProps {
 export default function Configuracion({ onLogout }: ConfiguracionProps) {
     return (
         <div style={{ padding: '0 8px' }}>
-            <div style={{
-                marginBottom: '32px',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(20px)',
-                padding: '24px 8px',
-                margin: '0 -8px 32px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
+            <div className="sticky-page-header">
                 <div>
                     <h1 style={{ fontSize: '28px', fontWeight: 700, margin: 0, letterSpacing: '-0.5px' }}>Configuración del Sistema</h1>
                     <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Ajustes globales, personalización y control de accesos.</p>
