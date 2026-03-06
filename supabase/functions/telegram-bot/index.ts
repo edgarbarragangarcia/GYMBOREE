@@ -5,6 +5,7 @@ const BOT_TOKEN = "8646314018:AAGO8K68wwC77YES_AAFy9Id0oNG4mJdImg";
 
 // Rotacion de API Keys de Gemini
 const GEMINI_API_KEYS = [
+    "AIzaSyBemLnOiGuljYvL6nbW2FF2gqx3S9q3e7I",
     "AIzaSyDmdIWANgS8IVvXbwQwGrmC3U1ztCxQCSI",
     "AIzaSyB6FWa7XRb5DX0B9DWfliSVBmdsl0CPDb0",
     "AIzaSyBJFR63ea8Q43mGHXM34fMOIeL_CK2BtJM"
@@ -27,16 +28,24 @@ const GYMBOREE_PROMPT = `Eres el asistente virtual oficial de GYMBOREE Play & Mu
 === REGLAS DE RESPUESTA ===
 - Responde siempre de forma amable, clara y breve. 
 - Usa emojis para ser cercano. 
-- NUNCA inventes informacion.
-- Si preguntan precios exactos: indica que varian por sede e invita a contactar la sucursal deseada.
-- Sugiere siempre la clase de demostracion GRATUITA.
+- BASA TUS RESPUESTAS EXCLUSIVAMENTE en la informacion de este prompt.
+- Si no sabes algo, indica que la sede respectiva brindará los detalles.
+- Sugiere siempre la clase de demostracion GRATUITA (Clase Demo).
 - Maximo 3 parrafos cortos. Se breve.
 
 === INFORMACION DE GYMBOREE ===
 Sedes Bogota: Cedritos, Chico, Colina, Salitre, Santa Barbara.
 Sedes Medellin: Poblado, Laureles.
 Sedes Otras: Bucaramanga, Ibague, Cajica.
-Clases: Play & Learn, Music, Art, School Skills, Play Lab (STEAM), Baby Lab.
+Edades y Enfoque: Estimulación y desarrollo infantil a través del juego dirigido. Atendemos a niños desde recién nacidos (0 meses) hasta los 5 años. Las clases son acompañadas por un adulto para fortalecer el vínculo y guiados por expertos.
+Clases: 
+👉 Play & Learn: Desarrollo cognitivo y motriz fino y grueso.
+👉 Music: Ritmo, canciones e instrumentos.
+👉 Art: Fomenta la imaginación y la expresión.
+👉 School Skills: Preparación preescolar, independencia, lectoescritura sin acompañante.
+👉 STEAM y Baby Lab: Experimentación y ciencia adaptada.
+Horarios: Funcionamos de Lunes a Sabado, e incluso domingos (varía por sede). Nuestros horarios incluyen múltiples franjas en la mañana y en la tarde. El horario exacto depende de la edad o etapa de desarrollo del niño, ¡así lo agrupamos con bebés de su misma etapa!
+Precios: Varían según la sede y se manejan paquetes de 1 vez a la semana, 2 o más. Tenemos mensualidad o distintos planes. Lo mejor es asistir a una Clase Demo para obtener una cotización a la medida.
 Web: https://gymboreeclases.co/`;
 
 function getSaludoHorario(): string {
@@ -62,21 +71,47 @@ function hasSchedulingIntent(text: string): boolean {
 
 function smartFallback(text: string, isFirstMessage: boolean, userName: string | null): string {
     const msg = text.toLowerCase();
+    const nombre = userName ? `, ${userName}` : '';
 
     if (isFirstMessage) {
         if (msg.includes("precio") || msg.includes("costo") || msg.includes("cuanto") || msg.includes("valor")) {
-            return `¡Hola! ${getSaludoHorario()}.\n\n💰 Los precios en Gymboree varían según la sede y el programa. Te invitamos a contactar la sucursal de tu interés para una cotización personalizada.\n\n📍 Ubica tu sede: https://gymboreeclases.co/ubica-tu-sede/\n\nPor cierto, ¿cómo te llamas para poder atenderte mejor?`;
+            return `¡Hola! ${getSaludoHorario()}.\n\n💰 Los precios en Gymboree varían según la sede y el programa. Manejamos paquetes de 1, 2 o más veces por semana.\n\n¡Te invitamos a una Clase Demo GRATUITA para conocernos y recibir una cotización personalizada! 🎉\n\n📍 Ubica tu sede: https://gymboreeclases.co/\n\nPor cierto, ¿cómo te llamas para poder atenderte mejor?`;
+        }
+        if (msg.includes("horario") || msg.includes("hora") || msg.includes("cuando") || msg.includes("día") || msg.includes("dia")) {
+            return `¡Hola! ${getSaludoHorario()}. Soy el asistente virtual de Gymboree 👶.\n\n🕐 Funcionamos de Lunes a Sábado (algunas sedes también domingos). Tenemos franjas en la mañana y en la tarde. El horario exacto depende de la edad de tu bebé, ¡así agrupamos niños de la misma etapa!\n\nPara darte los horarios específicos, ¿me dices la edad de tu bebé y en qué sede estás interesada? Y cuéntame, ¿cuál es tu nombre?`;
+        }
+        if (msg.includes("clase") || msg.includes("programa") || msg.includes("actividad")) {
+            return `¡Hola! ${getSaludoHorario()}. Soy el asistente de Gymboree Play & Music 👶.\n\nOfrecemos estos programas:\n👉 Play & Learn: Desarrollo cognitivo y motriz\n👉 Music: Ritmo y canciones\n👉 Art: Imaginación y expresión\n👉 School Skills: Preparación preescolar\n👉 STEAM y Baby Lab\n\nTodas nuestras clases son de 45 minutos. ¡Te invitamos a una Clase Demo GRATUITA! 🎉\n\n¿Cómo te llamas para poder atenderte mejor?`;
+        }
+        if (msg.includes("edad") || msg.includes("meses") || msg.includes("años") || msg.includes("bebe") || msg.includes("bebé") || msg.includes("recien nacido") || msg.includes("recién nacido")) {
+            return `¡Hola! ${getSaludoHorario()}. Soy el asistente de Gymboree 👶.\n\n🎒 Atendemos niños desde recién nacidos (0 meses) hasta los 5 años. Hasta los 3 años las clases requieren acompañamiento de un adulto (papá, mamá o cuidador).\n\n¿Cuántos meses o años tiene tu bebé? Así te puedo orientar mejor sobre qué programa le conviene. Y cuéntame, ¿cuál es tu nombre?`;
         }
         return `¡Hola! ${getSaludoHorario()}. Soy el asistente virtual de Gymboree Play & Music Colombia 👶.\n\n¿En qué te puedo ayudar hoy? Y cuéntame, ¿cuál es tu nombre?`;
     }
 
-    if (msg.includes("precio") || msg.includes("costo") || msg.includes("cuanto") || msg.includes("valor")) {
-        return `💰 Los precios en Gymboree varían según la sede y el programa. Te invitamos a contactar la sucursal de tu interés para una cotización personalizada.\n\n📍 Ubica tu sede: https://gymboreeclases.co/ubica-tu-sede/`;
+    // --- Mensajes posteriores (no primer mensaje) ---
+    if (msg.includes("precio") || msg.includes("costo") || msg.includes("cuanto") || msg.includes("valor") || msg.includes("mensualidad") || msg.includes("pagar")) {
+        return `💰 Los precios en Gymboree varían según la sede y el programa${nombre}. Manejamos paquetes de 1, 2 o más clases por semana.\n\n¡Lo mejor es asistir a una Clase Demo GRATUITA para recibir una cotización a tu medida! 🎉\n\n📍 https://gymboreeclases.co/`;
     }
-    if (msg.includes("sede") || msg.includes("donde") || msg.includes("ubicados")) {
-        return `📍 Tenemos sedes en Bogotá, Medellín, Bucaramanga, Ibagué y Cajicá. ¿En qué ciudad te encuentras ${userName ? userName : ''}?`;
+    if (msg.includes("horario") || msg.includes("hora") || msg.includes("cuando") || msg.includes("que dia") || msg.includes("qué día") || msg.includes("lunes") || msg.includes("martes") || msg.includes("sabado") || msg.includes("sábado") || msg.includes("domingo") || msg.includes("mañana") || msg.includes("tarde")) {
+        return `🕐 Funcionamos de Lunes a Sábado${nombre}, e incluso domingos en algunas sedes. Tenemos múltiples franjas en la mañana y en la tarde.\n\nEl horario exacto depende de la edad de tu bebé, ya que agrupamos a los niños por etapa de desarrollo. ¿Me dices la edad de tu hijo/a y la sede de tu interés para darte los horarios específicos? 😊`;
     }
-    return `Con gusto te ayudaré. Para darte información exacta, dime de qué sede te gustaría saber más. 😊`;
+    if (msg.includes("clase") || msg.includes("programa") || msg.includes("actividad") || msg.includes("que ofrecen") || msg.includes("qué ofrecen")) {
+        return `🎓 En Gymboree ofrecemos${nombre}:\n\n👉 Play & Learn: Desarrollo cognitivo y motriz\n👉 Music: Ritmo, canciones e instrumentos\n👉 Art: Imaginación y expresión creativa\n👉 School Skills: Preparación preescolar\n👉 STEAM y Baby Lab: Ciencia adaptada\n\nLas clases duran 45 minutos. ¡Te invitamos a una Clase Demo GRATUITA! 🎉`;
+    }
+    if (msg.includes("edad") || msg.includes("meses") || msg.includes("años") || msg.includes("bebe") || msg.includes("bebé") || msg.includes("recien nacido") || msg.includes("recién nacido") || msg.includes("pequeño") || msg.includes("hijo") || msg.includes("hija")) {
+        return `🎒 Atendemos niños desde recién nacidos (0 meses) hasta los 5 años${nombre}. Hasta los 3 años las clases son con acompañamiento de un adulto para fortalecer el vínculo.\n\nCuéntame, ¿cuántos meses o años tiene tu bebé? Así te oriento al programa ideal. 😊`;
+    }
+    if (msg.includes("sede") || msg.includes("donde") || msg.includes("ubicados") || msg.includes("dirección") || msg.includes("direccion") || msg.includes("ciudad")) {
+        return `📍 Tenemos sedes en:\n🏢 Bogotá: Cedritos, Chico, Colina, Salitre, Santa Bárbara\n🏢 Medellín: Poblado, Laureles\n🏢 También: Bucaramanga, Ibagué, Cajicá\n\n¿En qué ciudad te encuentras${nombre}?`;
+    }
+    if (msg.includes("demo") || msg.includes("prueba") || msg.includes("conocer") || msg.includes("visitar")) {
+        return `🎉 ¡Claro${nombre}! La Clase Demo es totalmente GRATUITA. Es la mejor forma de conocer nuestras instalaciones y vivir la experiencia Gymboree con tu bebé.\n\nPor favor dime tu sede de interés y la edad de tu hijo/a para orientarte. 😊`;
+    }
+    if (msg.includes("gracias") || msg.includes("thank") || msg.includes("ok ")) {
+        return `¡Con mucho gusto${nombre}! 😊 Estoy aquí para lo que necesites. Si quieres agendar una Clase Demo gratuita, ¡solo dime! 🎉`;
+    }
+    return `Con gusto te ayudo${nombre}. 😊 Puedo darte información sobre:\n\n🕐 Horarios\n🎓 Clases y programas\n🎒 Edades\n💰 Precios\n📍 Sedes\n🎉 Clase Demo gratuita\n\n¿Sobre qué tema te gustaría saber?`;
 }
 
 async function sendTypingAction(chatId: number) {
@@ -99,6 +134,7 @@ async function askGemini(contents: any[], isFirstMessage: boolean, saludo: strin
 
     for (const apiKey of GEMINI_API_KEYS) {
         try {
+            console.log(`[GEMINI] Trying key ending in ...${apiKey.slice(-6)}`);
             const res = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
                 {
@@ -111,11 +147,19 @@ async function askGemini(contents: any[], isFirstMessage: boolean, saludo: strin
                     })
                 }
             );
-            if (!res.ok) continue;
+            console.log(`[GEMINI] Response status: ${res.status}`);
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error(`[GEMINI] API error ${res.status}: ${errText}`);
+                continue;
+            }
             const json = await res.json();
-            return json.candidates?.[0]?.content?.parts?.[0]?.text || null;
-        } catch (e) { console.error("Gemini error:", e); }
+            const text = json.candidates?.[0]?.content?.parts?.[0]?.text || null;
+            console.log(`[GEMINI] Got response: ${text ? text.substring(0, 80) + '...' : 'NULL'}`);
+            return text;
+        } catch (e) { console.error("[GEMINI] Exception:", e); }
     }
+    console.error("[GEMINI] ALL keys failed, using smartFallback");
     return null;
 }
 
