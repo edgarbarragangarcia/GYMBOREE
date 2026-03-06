@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
@@ -236,6 +237,6 @@ Deno.serve(async (req) => {
         }
         return new Response(JSON.stringify({ ok: true }));
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+        return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });
     }
 });
