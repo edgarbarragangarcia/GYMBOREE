@@ -6,7 +6,7 @@ const STYLES = `
     100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
   }
 `;
-import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, X, FileText, Target, Save, CheckCircle } from 'lucide-react';
+import { Send, User, MessageCircle, Search, MoreVertical, Paperclip, Smile, Bot, Baby, Phone, Mail, Calendar, Activity, ExternalLink, Hash, Edit2, Clock, X, FileText, Target, Save, CheckCircle, Trash2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // Cliente apuntando al proyecto HUNTER (no toca la DB de APEG/Gymboree)
@@ -39,6 +39,7 @@ export default function TelegramBot() {
     const [chats, setChats] = useState<Chat[]>([]);
     const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
+    const [showChatMenu, setShowChatMenu] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -530,7 +531,73 @@ export default function TelegramBot() {
                                         <Bot size={14} />
                                         {selectedChat.ai_paused ? 'Responde Humano' : 'Bot AI Activo'}
                                     </button>
-                                    <MoreVertical size={20} color="var(--text-secondary)" style={{ cursor: 'pointer' }} />
+                                    <div style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={() => setShowChatMenu(!showChatMenu)}
+                                            style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                                        >
+                                            <MoreVertical size={20} color="var(--text-secondary)" />
+                                        </button>
+
+                                        {showChatMenu && (
+                                            <>
+                                                <div
+                                                    style={{ position: 'fixed', inset: 0, zIndex: 90 }}
+                                                    onClick={() => setShowChatMenu(false)}
+                                                />
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    right: 0,
+                                                    marginTop: '8px',
+                                                    background: 'white',
+                                                    borderRadius: '12px',
+                                                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                                                    border: '1px solid rgba(0,0,0,0.05)',
+                                                    minWidth: '220px',
+                                                    zIndex: 100,
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    <button
+                                                        onClick={async () => {
+                                                            setShowChatMenu(false);
+                                                            if (window.confirm('¿Estás seguro de que deseas borrar todo el historial de este chat? Esta acción no se puede deshacer.')) {
+                                                                try {
+                                                                    const { error } = await hunter.from('gym_tg_messages').delete().eq('chat_id', selectedChat.id);
+                                                                    if (error) throw error;
+                                                                    setMessages([]);
+                                                                    showNotify('Historial de chat borrado exitosamente');
+                                                                } catch (err) {
+                                                                    console.error('Error deleting messages:', err);
+                                                                    alert('Error al borrar los mensajes');
+                                                                }
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '12px 16px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px',
+                                                            background: 'transparent',
+                                                            border: 'none',
+                                                            color: 'red',
+                                                            fontSize: '13px',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            textAlign: 'left',
+                                                            transition: 'background 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = 'rgba(255, 0, 0, 0.05)'}
+                                                        onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                        Borrar historial del chat
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
